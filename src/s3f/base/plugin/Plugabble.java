@@ -23,7 +23,23 @@
 
 package s3f.base.plugin;
 
-public class Plugabble {
-	
+public interface Plugabble {
+    
+    /**
+     * Transforma esta factory em um objeto funcional.
+     */
+    public void init();
+    
+    /**
+     * Obtem os atributos principais desta classe.
+     * @return 
+     */
+    public Data getData();
+    
+    /**
+     * Cria uma nova instancia, devidamente incializada, deste objeto.
+     * @return 
+     */
+    public Object createInstance();
 }
 

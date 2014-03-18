@@ -23,7 +23,7 @@
 
 package s3f.base.plugin;
 
-public class Module {
+public interface Module extends Plugabble{
 	
 }
 

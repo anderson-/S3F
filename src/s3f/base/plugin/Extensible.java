@@ -23,7 +23,13 @@
 
 package s3f.base.plugin;
 
-public class Extensible {
-	
+public interface Extensible {
+    
+    /**
+     * chamado para recarregar os plugins também (update do listener)!.
+     * 
+     * @param pm 
+     */
+    public void loadModulesFrom (PluginManager pm);
 }
 
