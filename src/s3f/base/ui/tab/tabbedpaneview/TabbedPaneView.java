@@ -13,7 +13,12 @@ import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import s3f.base.plugin.AbstractData;
+import s3f.base.plugin.Extensible;
+import s3f.base.plugin.Plugabble;
+import s3f.base.plugin.PluginManager;
 import s3f.base.ui.tab.Tab;
+import s3f.base.ui.tab.TabData;
 import s3f.base.ui.tab.tabbedpaneview.dndtabbedpane.ButtonTabComponent;
 import s3f.base.ui.tab.tabbedpaneview.dndtabbedpane.DnDTabbedPane;
 import s3f.base.ui.tab.tabbedpaneview.dndtabbedpane.TabComponent;
@@ -22,7 +27,7 @@ import s3f.base.ui.tab.tabbedpaneview.dndtabbedpane.TabComponent;
  *
  * @author Anderson
  */
-public class TabbedPaneView {
+public class TabbedPaneView implements Plugabble {
 
     public static final int HORIZONTAL = 1;
     public static final int VERTICAL = 2;
@@ -80,7 +85,7 @@ public class TabbedPaneView {
 
     public Tab getView(Component component) {
         for (Tab view : views) {
-            if (component.equals(view.getData().getProperty(Tab.COMPONENT))) {
+            if (component.equals(view.getData().getProperty(TabData.COMPONENT))) {
                 return view;
             }
         }
@@ -156,7 +161,7 @@ public class TabbedPaneView {
         if (jSplitPanel.isSplitted()) {
             firstTabbedPaneView.add(view);
         } else {
-            this.getDnDTabbedPane().addTab("", null, (Component) view.getData().getProperty(Tab.COMPONENT), (String) view.getData().getProperty(Tab.TOOL_TIP));
+            this.getDnDTabbedPane().addTab("", null, (Component) view.getData().getProperty(TabData.COMPONENT), (String) view.getData().getProperty(TabData.TOOL_TIP));
             views.add(view);
             TabComponent tabComponent = new TabComponent(tabbedPane);
             tabComponent.update(view.getData());
@@ -166,6 +171,21 @@ public class TabbedPaneView {
 
     public JPanel getJPanel() {
         return jSplitPanel;
+    }
+
+    @Override
+    public void init() {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public AbstractData getData() {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public Object createInstance() {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
 }

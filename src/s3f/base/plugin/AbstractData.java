@@ -25,65 +25,75 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-public class Data {
+public abstract class AbstractData {
 
-    public static final String EMPTY_FIELD = "nil";
-    public static final String FACTORY_NAME = "factoryName";
-    public static final String OBJECT_NAME = "objectName";
+    public static final String _EMPTY_FIELD = "nil";
     public static final String DEPENDENCIES = "dependencies";
+    public static final String SINGLETON = "singleton";
 
     private HashMap<String, Object> properties = null;
     private ArrayList<DataListener> listeners = null;
-    private boolean useAsFactory = true;
-    private Data parent = null;
+    private final String name;
+    private boolean useAsFactory = false;
+    private AbstractData parent = null;
     private String path;
-    private ArrayList<Data> children = null;
+    private ArrayList<AbstractData> children = null;
     private Plugabble reference = null;
 
-    public Data(String path) {
+    /**
+     * deve ser chamada para registar cada nova instancia.
+     * @param newInstance 
+     */
+    protected static void registerInstance(Plugabble newInstance) {
+        PluginManager.registerInstance(newInstance);
+    }
+
+    protected AbstractData(String path, String name, String dependencies) {
         this.path = path;
+        this.name = name;
+        setProperty(AbstractData.DEPENDENCIES, dependencies);
     }
 
-    public void addProperty(String propertyName) {
-        setProperty(propertyName, EMPTY_FIELD);
+    public final void addProperty(String propertyName) {
+        setProperty(propertyName, _EMPTY_FIELD);
     }
 
-    public void setProperty(String propertyName, Object value) {
+    public final void setProperty(String propertyName, Object value) {
         if (properties == null) {
             properties = new HashMap<>();
         }
         properties.put(propertyName, value);
     }
 
-    public <T> T getProperty(String propertyName) {
+    public final <T> T getProperty(String propertyName) {
         if (properties != null) {
             return (T) properties.get(propertyName);
         } else {
-            throw new Error("Propriedade não existe!");
+            return null;
         }
     }
 
-    public String getPath() {
+    public final String getPath() {
         return path;
     }
 
-    public List<Data> getChildren() {
+    public final List<AbstractData> getChildren() {
         return children;
     }
 
-    public void addChild(Data child) {
+    public final void addChild(AbstractData child) {
         if (children == null) {
             children = new ArrayList<>();
         }
         children.add(child);
     }
 
-    public void printTree() {
+    public final void printTree() {
         printTree("", true);
     }
 
     private void printTree(String prefix, boolean isTail) {
-        System.out.println(prefix + (isTail ? "└── " : "├── ") + path + " : " + properties.get(FACTORY_NAME));
+        System.out.println(prefix + (isTail ? "└── " : "├── ") + path + " : " + name);
         for (int i = 0; i < children.size() - 1; i++) {
             children.get(i).printTree(prefix + (isTail ? "    " : "│   "), false);
         }

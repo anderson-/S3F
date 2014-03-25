@@ -17,11 +17,7 @@ import s3f.base.ui.tab.tabbedpaneview.dndtabbedpane.TabComponent;
  * @author Anderson
  */
 public interface Tab extends Plugabble {
-    public static String TITLE = "title";
-    public static String ICON = "icon";
-    public static String TOOL_TIP = "toolTip";
-    public static String COMPONENT = "component";
-    public static String TAB_COMPONENT = "tabComponent";
+  
 
     /*
     public class ViewData{

@@ -27,8 +27,9 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 import javax.swing.plaf.basic.BasicButtonUI;
-import s3f.base.plugin.Data;
+import s3f.base.plugin.AbstractData;
 import s3f.base.ui.tab.Tab;
+import s3f.base.ui.tab.TabData;
 
 /**
  * Representa uma aba com icone, titulo e botão de fechar.
@@ -79,9 +80,9 @@ public class TabComponent extends JPanel {
 //        };
     }
 
-    public void update(Data data) {
-        jicon.setIcon((Icon) data.getProperty(Tab.ICON));
-        label.setText((String) data.getProperty(Tab.TITLE));
+    public void update(AbstractData data) {
+        jicon.setIcon((Icon) data.getProperty(TabData.ICON));
+        label.setText((String) data.getProperty(TabData.TITLE));
     }
 
     private class TabButton extends JButton implements ActionListener {

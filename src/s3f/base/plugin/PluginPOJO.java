@@ -23,7 +23,7 @@ package s3f.base.plugin;
 
 import java.util.List;
 
-public class PluginConfigurationFile {
+public class PluginPOJO {
 
     public List<String> content;
 }

@@ -14,7 +14,9 @@ import javax.swing.JTable;
 import javax.swing.UIManager;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableColumn;
-import s3f.base.plugin.Data;
+import s3f.base.plugin.AbstractData;
+import s3f.base.plugin.data.FactoryData;
+import s3f.base.plugin.data.InstanceData;
 
 /**
  *
@@ -47,22 +49,14 @@ public class MessageTab implements Tab {
 
     private static final ArrayList<TMPData> messages = new ArrayList<>();
     private static final MyTableModel model = new MyTableModel();
-    private final Data data;
+    private final AbstractData data;
     private final JTable table;
     private final JScrollPane scrollPane;
 
     public MessageTab() {
         table = new JTable(model);
         scrollPane = new JScrollPane(table);
-        data = new Data("s3f.base.ui");
-        data.setProperty(Data.FACTORY_NAME, "MessageTab");
-        data.setProperty(Data.OBJECT_NAME, "MessageTab");
-        data.setProperty(Data.DEPENDENCIES, Data.EMPTY_FIELD);
-        data.setProperty(Tab.TITLE, "Mensagens");
-        data.setProperty(Tab.ICON, null);
-        data.setProperty(Tab.TOOL_TIP, "testet");
-        data.setProperty(Tab.COMPONENT, scrollPane);
-        
+        data = new TabData("s3f.base.ui", "MessageTab", AbstractData._EMPTY_FIELD, "Mensagens", null, "testet", scrollPane);
         
         TableColumn column;
         for (int i = 0; i < 3; i++) {
@@ -79,7 +73,7 @@ public class MessageTab implements Tab {
     }
 
     @Override
-    public Data getData() {
+    public AbstractData getData() {
         return data;
     }
 

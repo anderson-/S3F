@@ -15,12 +15,13 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTree;
 import javax.swing.UIManager;
-import s3f.base.plugin.Data;
+import s3f.base.plugin.AbstractData;
 import s3f.base.project.OLDproject.Project;
 import s3f.base.project.OLDproject.ProjectTreeTab;
 import s3f.base.project.OLDproject.Element;
 import s3f.base.project.OLDproject.FileCreator;
 import s3f.base.ui.tab.Tab;
+import s3f.base.ui.tab.TabData;
 import s3f.base.ui.tab.tabbedpaneview.TabbedPaneView;
 
 /**
@@ -31,17 +32,10 @@ public class Main {
 
     private static class TmpTab implements Tab {
 
-        private final Data data;
+        private final AbstractData data;
 
         public TmpTab(String title, Icon icon, String tooltip, Component component) {
-            data = new Data("s3f.teste");
-            data.setProperty(Data.FACTORY_NAME, "TmpTab");
-            data.setProperty(Data.OBJECT_NAME, "TmpTab");
-            data.setProperty(Data.DEPENDENCIES, Data.EMPTY_FIELD);
-            data.setProperty(Tab.TITLE, title);
-            data.setProperty(Tab.ICON, icon);
-            data.setProperty(Tab.TOOL_TIP, tooltip);
-            data.setProperty(Tab.COMPONENT, component);
+            data = new TabData("s3f.teste", "TmpTab", AbstractData._EMPTY_FIELD, title, icon, tooltip, component);
         }
 
         @Override
@@ -55,7 +49,7 @@ public class Main {
         }
 
         @Override
-        public Data getData() {
+        public AbstractData getData() {
             return data;
         }
 

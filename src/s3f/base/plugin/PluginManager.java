@@ -33,19 +33,38 @@ import s3f.util.toml.impl.Toml;
 
 public class PluginManager {
 
-    private Data factoryTreeRoot;
-    private Data entityTreeRoot;
-    private ArrayList<PluginConfigurationFile> pluginList;
+    class MTreeNodeData extends AbstractData {
 
-    public PluginManager() {
-        factoryTreeRoot = new Data("s3f");
-        factoryTreeRoot.setProperty(Data.DEPENDENCIES, Data.EMPTY_FIELD);
-        factoryTreeRoot.setProperty(Data.FACTORY_NAME, "root");
-        factoryTreeRoot.setProperty(Data.OBJECT_NAME, "root");
-        entityTreeRoot = new Data("root");
-        entityTreeRoot.setProperty(Data.DEPENDENCIES, Data.EMPTY_FIELD);
-        entityTreeRoot.setProperty(Data.FACTORY_NAME, Data.EMPTY_FIELD);
-        entityTreeRoot.setProperty(Data.OBJECT_NAME, Data.EMPTY_FIELD);
+        MTreeNodeData(String path) {
+            super(path, "node", "");
+        }
+
+        MTreeNodeData(String path, String name) {
+            super(path, name, "");
+        }
+
+    }
+
+    public static PluginManager PLUGIN_MANAGER = null;
+
+    public static PluginManager getPluginManager() {
+        if (PLUGIN_MANAGER == null) {
+            PLUGIN_MANAGER = new PluginManager();
+        }
+        return PLUGIN_MANAGER;
+    }
+
+    static void registerInstance(Plugabble newInstance) {
+
+    }
+
+    private final AbstractData factoryTreeRoot;
+    private final AbstractData entityTreeRoot;
+    private final ArrayList<PluginPOJO> pluginList;
+
+    private PluginManager() {
+        factoryTreeRoot = new MTreeNodeData("s3f", "Factory Tree Root");
+        entityTreeRoot = new MTreeNodeData("s3f", "Entity Tree Root");
         pluginList = new ArrayList<>();
     }
 
@@ -68,7 +87,7 @@ public class PluginManager {
     private void load(URL url, ClassLoader loader) {
         try {
             Toml parser = Toml.parse(new File(url.toURI()));
-            PluginConfigurationFile cfg = parser.getAs("plugin", PluginConfigurationFile.class);
+            PluginPOJO cfg = parser.getAs("plugin", PluginPOJO.class);
             pluginList.add(cfg);
             for (String className : cfg.content) {
                 Class c = loader.loadClass(className);
@@ -83,10 +102,10 @@ public class PluginManager {
         }
     }
 
-    public void addNode(Data node, Data tree) {
-        List<Data> children = tree.getChildren();
+    public void addNode(AbstractData node, AbstractData tree) {
+        List<AbstractData> children = tree.getChildren();
         boolean newBranch = true;
-        for (Data c : children) {
+        for (AbstractData c : children) {
             if (node.getPath().startsWith(factoryTreeRoot.getPath())) {
                 addNode(node, c);
                 newBranch = false;
@@ -99,17 +118,16 @@ public class PluginManager {
                 tree.addChild(node);
             } else {
                 int i = pathEnd.indexOf('.');
-                Data branch = new Data(pathEnd.substring(0, i));
+                AbstractData branch = new MTreeNodeData(pathEnd.substring(0, i));
                 tree.addChild(branch);
                 addNode(node, branch);
             }
         }
     }
-    
+
 //    public Data search (String path){
 //        
 //    }
-
     public String[] getPluginList() {
         throw new Error();
     }
@@ -122,11 +140,11 @@ public class PluginManager {
         throw new Error();
     }
 
-    public Data getFactoryData(String path) {
+    public AbstractData getFactoryData(String path) {
         throw new Error();
     }
 
-    public Data getFactoryData(String path, Class filter) {
+    public AbstractData getFactoryData(String path, Class filter) {
         throw new Error();
     }
 
@@ -134,11 +152,11 @@ public class PluginManager {
         throw new Error();
     }
 
-    public Data[] getFactoriesData(String path) {
+    public AbstractData[] getFactoriesData(String path) {
         throw new Error();
     }
 
-    public Data[] getFactoriesData(String path, Class filter) {
+    public AbstractData[] getFactoriesData(String path, Class filter) {
         throw new Error();
     }
 

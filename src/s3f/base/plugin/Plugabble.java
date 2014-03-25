@@ -34,10 +34,12 @@ public interface Plugabble {
      * Obtem os atributos principais desta classe.
      * @return 
      */
-    public Data getData();
+    public AbstractData getData();
     
     /**
      * Cria uma nova instancia, devidamente incializada, deste objeto.
+     * 
+     * Invocar esse metodo é valido apenas para componentes não Singleton.
      * @return 
      */
     public Object createInstance();
