@@ -13,13 +13,10 @@ import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
-import s3f.base.plugin.AbstractData;
-import s3f.base.plugin.Extensible;
+import s3f.base.plugin.Data;
 import s3f.base.plugin.Plugabble;
-import s3f.base.plugin.PluginManager;
 import s3f.base.ui.tab.Tab;
-import s3f.base.ui.tab.TabData;
-import s3f.base.ui.tab.tabbedpaneview.dndtabbedpane.ButtonTabComponent;
+import s3f.base.ui.tab.TabProperty;
 import s3f.base.ui.tab.tabbedpaneview.dndtabbedpane.DnDTabbedPane;
 import s3f.base.ui.tab.tabbedpaneview.dndtabbedpane.TabComponent;
 
@@ -85,7 +82,7 @@ public class TabbedPaneView implements Plugabble {
 
     public Tab getView(Component component) {
         for (Tab view : views) {
-            if (component.equals(view.getData().getProperty(TabData.COMPONENT))) {
+            if (component.equals(view.getData().getProperty(TabProperty.COMPONENT))) {
                 return view;
             }
         }
@@ -161,7 +158,7 @@ public class TabbedPaneView implements Plugabble {
         if (jSplitPanel.isSplitted()) {
             firstTabbedPaneView.add(view);
         } else {
-            this.getDnDTabbedPane().addTab("", null, (Component) view.getData().getProperty(TabData.COMPONENT), (String) view.getData().getProperty(TabData.TOOL_TIP));
+            this.getDnDTabbedPane().addTab("", null, (Component) view.getData().getProperty(TabProperty.COMPONENT), (String) view.getData().getProperty(TabProperty.TOOL_TIP));
             views.add(view);
             TabComponent tabComponent = new TabComponent(tabbedPane);
             tabComponent.update(view.getData());
@@ -179,12 +176,12 @@ public class TabbedPaneView implements Plugabble {
     }
 
     @Override
-    public AbstractData getData() {
+    public Data getData() {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
-    public Object createInstance() {
+    public Plugabble createInstance() {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 

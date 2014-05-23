@@ -24,6 +24,10 @@
 package s3f.base.plugin;
 
 public class Property {
-	
+    
+    protected Property(){
+        
+    }
+    
 }
 

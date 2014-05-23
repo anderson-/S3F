@@ -24,6 +24,12 @@ package s3f.base.plugin;
 import java.util.List;
 
 public class PluginPOJO {
-
+    public String name;
+    public String version;
+    public List<String> dependencies;
     public List<String> content;
+    public String guibuilder;
+    public Boolean platform;
+    public Boolean extension;
+    public Boolean pack;
 }

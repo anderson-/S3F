@@ -1,5 +1,5 @@
 /**
- * ConfigurationModeFactory.java
+ * Field.java
  *
  * Copyright (C) 2014
  *
@@ -21,9 +21,9 @@
  * S3F. If not, see http://www.gnu.org/licenses/.
  */
 
-package s3f.base.ui.cfg;
+package s3f.base.ui.tab.cfg;
 
-public class ConfigurationModeFactory {
+public class Field {
 	
 }
 

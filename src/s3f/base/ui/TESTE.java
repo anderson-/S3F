@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package s3f.base.ui.main;
+package s3f.base.ui;
 
 import java.awt.Component;
 import java.awt.Dimension;
@@ -15,27 +15,29 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTree;
 import javax.swing.UIManager;
-import s3f.base.plugin.AbstractData;
-import s3f.base.project.OLDproject.Project;
-import s3f.base.project.OLDproject.ProjectTreeTab;
+import s3f.base.plugin.Data;
+import s3f.base.plugin.Plugabble;
 import s3f.base.project.OLDproject.Element;
 import s3f.base.project.OLDproject.FileCreator;
+import s3f.base.project.OLDproject.Project;
+import s3f.base.project.OLDproject.ProjectTreeTab;
 import s3f.base.ui.tab.Tab;
-import s3f.base.ui.tab.TabData;
+import s3f.base.ui.tab.TabProperty;
 import s3f.base.ui.tab.tabbedpaneview.TabbedPaneView;
 
 /**
  *
  * @author Anderson
  */
-public class Main {
+public class TESTE {
 
     private static class TmpTab implements Tab {
 
-        private final AbstractData data;
+        private final Data data;
 
         public TmpTab(String title, Icon icon, String tooltip, Component component) {
-            data = new TabData("s3f.teste", "TmpTab", AbstractData._EMPTY_FIELD, title, icon, tooltip, component);
+            data = new Data("s3f.teste", "TmpTab", Data._EMPTY_FIELD);
+            TabProperty.put(data, title, icon, tooltip, component);
         }
 
         @Override
@@ -49,7 +51,7 @@ public class Main {
         }
 
         @Override
-        public AbstractData getData() {
+        public Data getData() {
             return data;
         }
 
@@ -59,13 +61,13 @@ public class Main {
         }
 
         @Override
-        public Object createInstance() {
+        public Plugabble createInstance() {
             throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
         }
 
     };
 
-    static class TMPElement implements Element {
+    public static class TMPElement implements Element {
 
         private final String name;
         private final Icon icon;
@@ -117,10 +119,15 @@ public class Main {
             //UIManager.put("nimbusBlueGrey", Color.red.brighter());
             //UIManager.put("control", Color.YELLOW.brighter());
             try {
-                for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
-                    if ("Nimbus".equals(info.getName())) {
-                        javax.swing.UIManager.setLookAndFeel(info.getClassName());
-                        break;
+                String systemLookAndFeelClassName = UIManager.getSystemLookAndFeelClassName();
+                if (false && !systemLookAndFeelClassName.equals(UIManager.getCrossPlatformLookAndFeelClassName())) {
+                    UIManager.setLookAndFeel(systemLookAndFeelClassName);
+                } else {
+                    for (UIManager.LookAndFeelInfo info : UIManager.getInstalledLookAndFeels()) {
+                        if ("Nimbus".equals(info.getName())) {
+                            UIManager.setLookAndFeel(info.getClassName());
+                            break;
+                        }
                     }
                 }
             } catch (Exception ex) {

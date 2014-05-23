@@ -14,10 +14,10 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeSelectionModel;
-import s3f.base.plugin.AbstractData;
-import s3f.base.plugin.data.FactoryData;
+import s3f.base.plugin.Data;
+import s3f.base.plugin.Plugabble;
 import s3f.base.ui.tab.Tab;
-import s3f.base.ui.tab.TabData;
+import s3f.base.ui.tab.TabProperty;
 
 /**
  *
@@ -28,8 +28,13 @@ public class ProjectTreeTab implements Tab {
     private final JTree tree;
     private final JScrollPane treeView;
     private Project project;
-    private AbstractData data;
+    private Data data;
 
+    @Deprecated
+    public ProjectTreeTab(){
+        this(new Project("nil"));
+    }
+    
     public ProjectTreeTab(Project project) {
         //create a tree that allows one selection at a time
         tree = new JTree();
@@ -40,7 +45,9 @@ public class ProjectTreeTab implements Tab {
         //update content
         setProject(project);
 
-        data = new TabData("s3f.base.project", "ProjectTreeTab", AbstractData._EMPTY_FIELD, "Projeto", null, "Informações sobre o projeto atual", treeView);
+        data = new Data("s3f.base.project", "ProjectTreeTab", Data._EMPTY_FIELD);
+        TabProperty.put(data, "Projeto", null, "Informações sobre o projeto atual", treeView);
+
     }
 
     public final void setProject(Project project) {
@@ -72,7 +79,7 @@ public class ProjectTreeTab implements Tab {
     }
 
     @Override
-    public AbstractData getData() {
+    public Data getData() {
         return data;
     }
 
@@ -82,7 +89,7 @@ public class ProjectTreeTab implements Tab {
     }
 
     @Override
-    public Object createInstance() {
+    public Plugabble createInstance() {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 

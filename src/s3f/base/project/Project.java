@@ -24,6 +24,13 @@
 package s3f.base.project;
 
 public class Project {
-	
+    
+    public void open(){
+        
+    }
+    
+    public void save(){
+        
+    }
 }
 

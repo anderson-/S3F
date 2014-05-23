@@ -14,9 +14,8 @@ import javax.swing.JTable;
 import javax.swing.UIManager;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableColumn;
-import s3f.base.plugin.AbstractData;
-import s3f.base.plugin.data.FactoryData;
-import s3f.base.plugin.data.InstanceData;
+import s3f.base.plugin.Data;
+import s3f.base.plugin.Plugabble;
 
 /**
  *
@@ -30,7 +29,7 @@ public class MessageTab implements Tab {
     }
 
     @Override
-    public Object createInstance() {
+    public Plugabble createInstance() {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
@@ -49,15 +48,16 @@ public class MessageTab implements Tab {
 
     private static final ArrayList<TMPData> messages = new ArrayList<>();
     private static final MyTableModel model = new MyTableModel();
-    private final AbstractData data;
+    private final Data data;
     private final JTable table;
     private final JScrollPane scrollPane;
 
     public MessageTab() {
         table = new JTable(model);
         scrollPane = new JScrollPane(table);
-        data = new TabData("s3f.base.ui", "MessageTab", AbstractData._EMPTY_FIELD, "Mensagens", null, "testet", scrollPane);
-        
+        data = new Data("s3f.base.ui", "MessageTab", Data._EMPTY_FIELD);
+        TabProperty.put(data, "Mensagens", null, "testet", scrollPane);
+
         TableColumn column;
         for (int i = 0; i < 3; i++) {
             column = table.getColumnModel().getColumn(i);
@@ -73,7 +73,7 @@ public class MessageTab implements Tab {
     }
 
     @Override
-    public AbstractData getData() {
+    public Data getData() {
         return data;
     }
 

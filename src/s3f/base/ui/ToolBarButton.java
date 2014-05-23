@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package s3f.base.ui.main;
+package s3f.base.ui;
 
 import java.awt.Dimension;
 import java.awt.Graphics;
@@ -116,8 +116,9 @@ public class ToolBarButton {
 
         public JDDButton() {
             super("", icon);
-            setBorder(null);
+            setBorderPainted(false);
             setFocusable(false);
+            setMinimumSize(new Dimension(45, 55));
             setPreferredSize(new Dimension(45, 55));
             //sem background
 //            setContentAreaFilled(false);
