@@ -22,6 +22,7 @@
 package s3f.base.plugin;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
@@ -34,28 +35,29 @@ public final class Data {
 
     private HashMap<String, Object> properties = null;
     private ArrayList<DataListener> listeners = null;
-    private final String name;
+    private final String fullName;
     private boolean useAsFactory = false;
     private Data parent = null;
+    private String name;
     private String path;
     private ArrayList<Data> children = null;
     private Plugabble reference = null;
 
-    public Data(String path, String name, String dependencies) {
-        this.path = path;
+    public Data(String name, String path, String fullName) {
         this.name = name;
-        setProperty(Data.DEPENDENCIES, dependencies);
+        this.path = path;
+        this.fullName = fullName;
     }
 
-    public Data(String path, String name, String dependencies, Plugabble factory) {
-        this.path = path;
+    public Data(String name, String path, String fullName, Plugabble reference) {
         this.name = name;
-        setProperty(Data.DEPENDENCIES, dependencies);
-        setProperty(FACTORY, factory);
+        this.path = path;
+        this.fullName = fullName;
+        this.reference = reference;
     }
 
-    void setLeaf() {
-        path += "." + name;
+    public String getFullName() {
+        return fullName;
     }
 
     public String getName() {
@@ -66,14 +68,27 @@ public final class Data {
         return path;
     }
 
+    public String calcPath() {
+        String path = buildPathString(new StringBuilder()).toString();
+        return path.substring(0, path.length() - 1);
+    }
+
+    private StringBuilder buildPathString(StringBuilder sb) {
+        if (parent != null) {
+            parent.buildPathString(sb);
+        }
+        sb.append(name).append('.');
+        return sb;
+    }
+
     public String getDependencies() {
         return getProperty(Data.DEPENDENCIES);
     }
 
-    public void setReference(Plugabble reference){
+    public void setReference(Plugabble reference) {
         this.reference = reference;
     }
-    
+
     public Plugabble getReference() {
         return reference;
     }
@@ -82,19 +97,23 @@ public final class Data {
         return parent;
     }
 
-    public void addChild(Data child) {
+    public Data addChild(Data child) {
         if (children == null) {
             children = new ArrayList<>();
         }
         children.add(child);
+        return child;
     }
 
     public List<Data> getChildren() {
         return children;
     }
 
-    public void delete() {
-
+    public boolean delete() {
+        if (parent != null) {
+            return parent.children.remove(this);
+        }
+        return false;
     }
 
     public void addProperty(String propertyName) {
@@ -138,7 +157,7 @@ public final class Data {
     }
 
     private void printTree(String prefix, boolean isTail) {
-        System.out.println(prefix + (isTail ? "└── " : "├── ") + path + " : " + name);
+        System.out.println(prefix + (isTail ? "└── " : "├── ") + name + " : \"" + fullName + "\"");
         if (children != null) {
             for (int i = 0; i < children.size() - 1; i++) {
                 children.get(i).printTree(prefix + (isTail ? "    " : "│   "), false);
@@ -149,9 +168,62 @@ public final class Data {
         }
     }
 
+    public static List<Data> search(String[] path, List<Data> list, Data root) {
+        return search(path, 0, list, root);
+    }
+
+    /**
+     *
+     * 
+     *
+     * @param path
+     * @param i
+     * @param list
+     * @param root
+     * @return
+     */
+    private static List<Data> search(String[] path, int i, List<Data> list, Data root) {
+        if (i >= path.length) {
+            return list;
+        } else if (path[i].equals(root.name)) {
+            if (i == path.length - 1) {
+                list.add(root);
+            } else if (i < path.length - 1) {
+                if (path[i + 1].equals("*")) {
+                    list.addAll(root.children);
+                } else {
+                    if (root.children != null) {
+                        for (Data c : root.children) {
+                            search(path, i + 1, list, c);
+                        }
+                    }
+                }
+            }
+        }
+        return list;
+    }
+
+    public static Data addBranch(String[] path, int i, Data root) {
+        if (i >= path.length) {
+            return root;
+        } else if (path[i].equals(root.name)) {
+            return addBranch(path, i + 1, root);
+
+        } else if (root.children != null) {
+            for (Data c : root.children) {
+                if (c.name.equals(path[i])) {
+                    return addBranch(path, i + 1, c);
+                }
+            }
+        }
+
+        root = root.addChild(new Data(path[i], "", "empty"));
+        return addBranch(path, i + 1, root);
+    }
+
     @Override
     public String toString() {
-        return "Data{" + "name=" + name + ", path=" + path + ", children=" + ((children == null) ? -1 : children.size()) + '}';
+        return "Data{" + "fullName=" + fullName + ", name=" + name + ", children=" + ((children == null) ? -1 : children.size()) + '}';
     }
 
 }

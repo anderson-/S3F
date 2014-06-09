@@ -45,7 +45,7 @@ public class ProjectTreeTab implements Tab {
         //update content
         setProject(project);
 
-        data = new Data("s3f.base.project", "ProjectTreeTab", Data._EMPTY_FIELD);
+        data = new Data("projectTreeTab", "s3f.base.project", "ProjectTreeTab");
         TabProperty.put(data, "Projeto", null, "Informações sobre o projeto atual", treeView);
 
     }

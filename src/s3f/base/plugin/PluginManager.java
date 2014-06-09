@@ -23,15 +23,26 @@ package s3f.base.plugin;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.lang.reflect.Field;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.PropertyResourceBundle;
+import java.util.ResourceBundle;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import s3f.base.ui.GUIBuilder;
+import s3f.util.fommil.jni.JniNamer;
 import s3f.util.toml.impl.Toml;
 
 public class PluginManager {
@@ -44,6 +55,31 @@ public class PluginManager {
             loadPlugins();
         }
         return PLUGIN_MANAGER;
+    }
+
+    public static ResourceBundle getbundle() {
+        return getPluginManager().defaultBundle;
+    }
+
+    public static ResourceBundle getbundle(String pluginShortName) {
+        ResourceBundle bundle = getPluginManager().bundleMap.get(pluginShortName);
+        if (bundle != null) {
+            return bundle;
+        } else {
+            return getbundle();
+        }
+    }
+
+    public static String getText(String key) {
+        return getbundle().getString(key);
+    }
+
+    public static String getText(String pluginShortName, String key) {
+        ResourceBundle bundle = getPluginManager().bundleMap.get(pluginShortName);
+        if (bundle != null) {
+            return bundle.getString(key);
+        }
+        return "#" + pluginShortName + "#" + key + "#";
     }
 
     /**
@@ -80,7 +116,55 @@ public class PluginManager {
             File dataDir = new File(classRunningPath + "/data");
 
         } else {
-            PluginManager.getPluginManager().loadSoftPlugin("s3f/base/plugin.cfg");
+            //PluginManager.getPluginManager().loadSoftPlugin("s3f/base/plugin.cfg");
+        }
+        System.gc();
+        runUserScripts();
+    }
+
+    private static void runUserScripts() {
+        String classRunningPath = PluginManager.class.getProtectionDomain().getCodeSource().getLocation().getPath();
+        ArrayList<String> scripts = new ArrayList<>();
+
+        if (classRunningPath.contains(".jar")) {
+            int i = classRunningPath.lastIndexOf('/');
+            classRunningPath = classRunningPath.substring(0, i);
+
+            File scriptsDir = new File(classRunningPath + "/userjs");
+
+            if (scriptsDir.isDirectory()) {
+                File[] directoryListing = scriptsDir.listFiles();
+                if (directoryListing != null) {
+                    for (File child : directoryListing) {
+                        if (child.getName().contains(".js")) {
+                            InputStream is = null;
+                            try {
+                                is = new FileInputStream(child);
+                                if (is != null) {
+                                    String script = convertInputStreamToString(is);
+                                    scripts.add(script);
+                                }
+                            } catch (FileNotFoundException ex) {
+                            } finally {
+                                try {
+                                    is.close();
+                                } catch (IOException ex) {
+                                    ex.printStackTrace();
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    // Handle the case where dir is not really a directory.
+                    // Checking dir.isDirectory() above would not be sufficient
+                    // to avoid race conditions with another process that deletes
+                    // directories.
+                }
+            }
+        }
+
+        for (String script : scripts) {
+
         }
         System.gc();
     }
@@ -98,11 +182,29 @@ public class PluginManager {
      */
     private final Data entityTreeRoot;
     private final ArrayList<PluginPOJO> pluginList;
+    private final HashMap<String, ResourceBundle> bundleMap;
+    private ResourceBundle defaultBundle;
 
     private PluginManager() {
-        factoryTreeRoot = new Data("s3f", "Factory Tree Root", "");
-        entityTreeRoot = new Data("root", "Entity Tree Root", "");
+        factoryTreeRoot = new Data("s3f", "", "Factory Tree Root");
+        entityTreeRoot = new Data("root", "", "Entity Tree Root");
         pluginList = new ArrayList<>();
+        bundleMap = new HashMap<>();
+        defaultBundle = ResourceBundle.getBundle("s3f.lang.lang", new Locale("pt", "BR"), this.getClass().getClassLoader());
+//        Locale l = new Locale("pt", "BR");
+//        defaultBundle = null;
+//        try {
+//            URL resource = PluginManager.class.getClassLoader().getResource(l.toString() + ".lang");
+//            if (resource == null){
+//                resource = PluginManager.class.getClassLoader().getResource("default.lang");
+//                if (resource == null){
+//                    System.out.println("ERROR D:");
+//                }
+//            }
+//            defaultBundle = new PropertyResourceBundle(resource.openStream());
+//        } catch (IOException ex) {
+//            Logger.getLogger(PluginManager.class.getName()).log(Level.SEVERE, null, ex);
+//        }
     }
 
     @Deprecated
@@ -120,8 +222,8 @@ public class PluginManager {
      *
      * @param newRootInstance
      */
-    public Plugabble registerRootInstance(Plugabble newRootInstance) {
-        addNode(newRootInstance.getData(), entityTreeRoot);
+    public Plugabble registerRootInstance(Plugabble newRootInstance, String path) {
+        addNode(path, newRootInstance.getData(), entityTreeRoot);
         return newRootInstance;
     }
 
@@ -155,10 +257,7 @@ public class PluginManager {
         load(loader.getResourceAsStream(pathToConfigPOJO), loader);
     }
 
-    private void load(InputStream is, ClassLoader loader) {
-        if (is == null) {
-            return;
-        }
+    public static String convertInputStreamToString(InputStream is) {
         BufferedReader br = null;
         StringBuilder sb = new StringBuilder();
         String line;
@@ -178,7 +277,14 @@ public class PluginManager {
                 }
             }
         }
-        load(sb.toString(), loader);
+        return sb.toString();
+    }
+
+    private void load(InputStream is, ClassLoader loader) {
+        if (is == null) {
+            return;
+        }
+        load(convertInputStreamToString(is), loader);
     }
 
     private boolean validatePlugin(PluginPOJO cfg) {
@@ -203,7 +309,72 @@ public class PluginManager {
         Class c = loader.loadClass(className);
         if (Plugabble.class.isAssignableFrom(c)) {
             Plugabble p = (Plugabble) c.newInstance();
-            addNode(p.getData(), factoryTreeRoot);
+            addNode(p.getData().getPath(), p.getData(), factoryTreeRoot);
+        }
+    }
+
+    /**
+     * Sets the java library path to the specified path
+     *
+     * @param path the new library path
+     * @throws Exception
+     */
+    private static void setLibraryPath(String path) throws Exception {
+        System.setProperty("java.library.path", path);
+        //set sys_paths to null
+        final Field sysPathsField = ClassLoader.class.getDeclaredField("sys_paths");
+        sysPathsField.setAccessible(true);
+        sysPathsField.set(null, null);
+    }
+
+    /**
+     * Carrega uma biblioteca nativa no caminho especificado.
+     *
+     * @param libName
+     * @param path
+     * @return
+     */
+    private static boolean loadNativeLib(String libName, String path) {
+
+        String defaultPath = System.getProperty("java.library.path");
+
+        try {
+            String newPath = path;
+            /* Make sure the library is on the java lib path.
+             * Make sure you're using System.loadLibrary() correctly. 
+             * If your library is called "libSample.so", 
+             * the call should be System.loadLibrary("Sample").
+             * Consider that there may be an issue with the library under OpenJDK, 
+             * and that's the Java VM you're using. 
+             * Run the command java -version and if part of the response is 
+             * something like OpenJDK Runtime Environment (build 1.6.0_0-b11), 
+             * try installing the official Sun JDK and see if that works. */
+            setLibraryPath(newPath);
+            System.loadLibrary("rxtxSerial");
+            return true;
+        } catch (Error | Exception e) {
+            try {
+                setLibraryPath(defaultPath);
+                return loadNativeLib(libName);
+            } catch (Exception e2) {
+                e2.printStackTrace();
+                return false;
+            }
+        }
+    }
+
+    /**
+     * Carrega uma biblioteca nativa do sistema.
+     *
+     * @param libName
+     * @return
+     */
+    private static boolean loadNativeLib(String libName) {
+        try {
+            System.loadLibrary(libName);
+            return true;
+        } catch (Error | Exception e) {
+            return false;
         }
     }
 
@@ -211,16 +382,38 @@ public class PluginManager {
             throws ClassNotFoundException, InstantiationException, IllegalAccessException {
         //adiciona o plugin na lista
         pluginList.add(cfg);
+        //internacionalização
+        if (cfg.langFolder != null) {
+            bundleMap.put(cfg.name, ResourceBundle.getBundle(cfg.langFolder + ".lang", new Locale("pt", "BR"), loader));
+        }
+
+        if (cfg.nativeLibs != null) {
+            String path = PluginManager.class.getProtectionDomain().getCodeSource().getLocation().getPath();
+            path = path.substring(0, path.lastIndexOf('/') + 1);
+            path += "natives/" + JniNamer.os() + "/" + JniNamer.arch();
+
+            for (String nativeLib : cfg.nativeLibs) {
+                loadNativeLib(nativeLib, path);
+            }
+        }
+
         //expande a arvore de factories
         for (String className : cfg.content) {
             registerClass(className, loader);
         }
-        
-        if (cfg.platform != null && cfg.platform == true){
-            factoryTreeRoot.setProperty("platform_name", cfg.name);
-            factoryTreeRoot.setProperty("platform_version", cfg.version);
+
+        //define a plataforma
+        if (cfg.platform != null && cfg.platform == true) {
+            if (factoryTreeRoot.getProperty("platform_name") == null) {
+                factoryTreeRoot.setProperty("platform_name", cfg.name);
+                factoryTreeRoot.setProperty("platform_version", cfg.version);
+            } else {
+                System.err.println("Somente uma plataforma pode ser carregada!");
+                System.exit(0);
+            }
         }
 
+        //expande o ramo construtor da gui
         if (cfg.guibuilder != null) {
             registerClass(cfg.guibuilder, loader);
         }
@@ -236,49 +429,31 @@ public class PluginManager {
         } catch (ClassNotFoundException | IllegalAccessException | InstantiationException | NullPointerException ex) {
             ex.printStackTrace();
         } finally {
-            if (loader instanceof URLClassLoader) {
-                try {
-                    URLClassLoader urlClassLoader = (URLClassLoader) loader;
-                    urlClassLoader.close();
-                } catch (IOException ex) {
-                    ex.printStackTrace();
-                }
-            }
+            /*  
+             Proximas linhas ao serem executadas pelo netbeans geram:
+             - java.lang.ClassNotFoundException
+             - java.lang.NoClassDefFoundError
+             */
+//            if (loader instanceof URLClassLoader) {
+//                try {
+//                    URLClassLoader urlClassLoader = (URLClassLoader) loader;
+//                    urlClassLoader.close();
+//                } catch (IOException ex) {
+//                    ex.printStackTrace();
+//                }
+//            }
         }
     }
 
-    private static void addNode(Data node, Data tree) {
-        List<Data> children = tree.getChildren();
-        //adiciona nó, encontra nó mais proximo ou cria um novo?
-        String nodePath = node.getPath();
-        String treePath = tree.getPath();
-        String pathEnd = nodePath.replaceFirst(treePath, "");
-        if (treePath.length() > 30) {
-            //não é possivel adicionar um nó que não comece com 's3f'
-            throw new Error("Fix me");
-        }
-        if (nodePath.equals(treePath) && !pathEnd.contains(".")) {
-            node.setLeaf();
-            tree.addChild(node);
-            return;
-        } else if (children != null) {
-            for (Data c : children) {
-                if (nodePath.startsWith(c.getPath())) {
-                    addNode(node, c);
-                    return;
-                }
-            }
-        }
-        int i = pathEnd.substring(1).indexOf('.');
-        if (i > 0) {
-            pathEnd = pathEnd.substring(0, i + 1);
-        }
+    private static void addNode(String path, Data node, Data tree) {
+        addNode(path.split("\\."), node, tree);
+    }
 
-        Data branch = new Data(treePath + pathEnd, pathEnd.substring(1), "");
-        System.out.println(branch);
-        tree.addChild(branch);
-        addNode(node, branch);
-
+    private static void addNode(String[] path, Data node, Data tree) {
+        Data d = Data.addBranch(path, 0, tree);
+        if (d != null) {
+            d.addChild(node);
+        }
     }
 
 //    public Data search (String path){
@@ -317,46 +492,46 @@ public class PluginManager {
         throw new Error();
     }
 
-    public static String search(String path, Data tree, List<Data> result) {
-        if (path == null || tree == null || result == null) {
-            return null;
-        }
-        List<Data> children = tree.getChildren();
-        if (path.startsWith(tree.getPath())) {
-            if (path.equals(tree.getPath())) {
-                result.add(tree);
-                return null;
-            } else if (children != null) {
-                if (path.equals(tree.getPath() + ".*")) {
-                    for (Data c : children) {
-                        result.add(c);
-                    }
-                    return null;
-                } else {
-                    for (Data c : children) {
-                        if (path.startsWith(c.getPath())) {
-                            if (path.isEmpty()) {
-                                result.add(c);
-                                return null;
-                            } else {
-                                search(path, c, result);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        return (result.isEmpty()) ? tree.getPath() : null;
-    }
-
+//    public static String search(String path, Data tree, List<Data> result) {
+//        if (path == null || tree == null || result == null) {
+//            return null;
+//        }
+//        List<Data> children = tree.getChildren();
+//        if (path.startsWith(tree.getPath())) {
+//            if (path.equals(tree.getPath())) {
+//                result.add(tree);
+//                return null;
+//            } else if (children != null) {
+//                if (path.equals(tree.getPath() + ".*")) {
+//                    for (Data c : children) {
+//                        result.add(c);
+//                    }
+//                    return null;
+//                } else {
+//                    for (Data c : children) {
+//                        if (path.startsWith(c.getPath())) {
+//                            if (path.isEmpty()) {
+//                                result.add(c);
+//                                return null;
+//                            } else {
+//                                search(path, c, result);
+//                            }
+//                        }
+//                    }
+//                }
+//            }
+//        }
+//        return (result.isEmpty()) ? tree.getPath() : null;
+//    }
     public Data getFactoryData() {
         return factoryTreeRoot;
     }
 
     public Data getFactoryData(String path) {
         ArrayList<Data> result = new ArrayList<>();
-        search(path, factoryTreeRoot, result);
+        Data.search(path.split("\\."), result, factoryTreeRoot);
         if (result.isEmpty()) {
+            System.out.println("IS NULL");
             return null;
         } else {
             return result.get(0);
@@ -365,7 +540,7 @@ public class PluginManager {
 
     public Object getFactoryProperty(String path, String field) {
         ArrayList<Data> result = new ArrayList<>();
-        search(path, factoryTreeRoot, result);
+        Data.search(path.split("\\."), result, factoryTreeRoot);
         if (result.isEmpty()) {
             return null;
         } else {
@@ -375,7 +550,7 @@ public class PluginManager {
 
     public Data[] getFactoriesData(String path) {
         ArrayList<Data> result = new ArrayList<>();
-        search(path, factoryTreeRoot, result);
+        Data.search(path.split("\\."), result, factoryTreeRoot);
         if (result.isEmpty()) {
             return null;
         } else {
@@ -387,7 +562,7 @@ public class PluginManager {
 
     public Data[] getFactoriesData(String path, Class filter) {
         ArrayList<Data> result = new ArrayList<>();
-        search(path, factoryTreeRoot, result);
+        Data.search(path.split("\\."), result, factoryTreeRoot);
         if (result.isEmpty()) {
             return null;
         } else {
@@ -403,7 +578,7 @@ public class PluginManager {
 
     public Object[] getFactoriesProperty(String path, String field) {
         ArrayList<Data> result = new ArrayList<>();
-        search(path, factoryTreeRoot, result);
+        Data.search(path.split("\\."), result, factoryTreeRoot);
         if (result.isEmpty()) {
             return null;
         } else {
@@ -425,7 +600,7 @@ public class PluginManager {
             return null;
         }
         Plugabble p = d.getReference();
-        return registerRootInstance(p.createInstance());
+        return registerRootInstance(p.createInstance(), path);
     }
 
     private void addListener(Extensible listener) {

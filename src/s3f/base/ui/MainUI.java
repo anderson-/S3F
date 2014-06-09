@@ -22,23 +22,24 @@
 package s3f.base.ui;
 
 import java.awt.BorderLayout;
-import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.FlowLayout;
+import java.awt.Rectangle;
+import java.awt.Toolkit;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
-import java.util.ArrayList;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import javax.swing.Box;
+import java.util.Arrays;
+import java.util.HashMap;
 import javax.swing.BoxLayout;
-import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JToolBar;
 import javax.swing.UIManager;
@@ -46,9 +47,11 @@ import javax.swing.WindowConstants;
 import s3f.base.plugin.Data;
 import s3f.base.plugin.Extensible;
 import s3f.base.plugin.PluginManager;
+import s3f.base.script.MyJSConsole;
 import s3f.base.ui.tab.Tab;
 import s3f.base.ui.tab.tabbedpaneview.TabbedPaneView;
 import s3f.util.SplashScreen;
+import sun.org.mozilla.javascript.tools.shell.JSConsole;
 
 public class MainUI implements Extensible {
 
@@ -60,6 +63,9 @@ public class MainUI implements Extensible {
     private TabbedPaneView mainView;
     private JToolBar statusBar;
     private JLabel statusLabel;
+    private boolean hideS3FMenu = false;
+    private PluginConfigurationWindow pluginConfigurationWindow = null;
+    private MyJSConsole shell = null;
 
     private MainUI() {
         createAndShowUI();
@@ -117,7 +123,7 @@ public class MainUI implements Extensible {
         statusLabel = new JLabel();
         statusBar.setFloatable(false);
         statusBar.setRollover(true);
-        statusLabel.setText("Bem Vindo!");
+        statusLabel.setText(PluginManager.getText("s3f.statusbar.welcome"));
         statusBar.add(statusLabel);
 
         window.getContentPane().add(statusBar, BorderLayout.SOUTH);
@@ -127,7 +133,55 @@ public class MainUI implements Extensible {
     }
 
     private void show() {
+        //centraliza a janela
+        Dimension screen = Toolkit.getDefaultToolkit().getScreenSize();
+        Rectangle frame = window.getBounds();
+        window.setLocation((screen.width - frame.width) / 2, (screen.height - frame.height) / 2);
+        //torna a janela visivel
         window.setVisible(true);
+    }
+
+    public void hideS3FMenu(boolean hideS3FMenu) {
+        this.hideS3FMenu = hideS3FMenu;
+    }
+
+    public JMenuItem getS3FPluginConfigurationMenuItem() {
+        JMenuItem i = new JMenuItem(PluginManager.getText("pcw.item.name"));
+        ActionListener actionListener = new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (pluginConfigurationWindow == null) {
+                    pluginConfigurationWindow = new PluginConfigurationWindow();
+                }
+                pluginConfigurationWindow.show(true);
+            }
+        };
+        i.addActionListener(actionListener);
+        return i;
+    }
+
+    public JMenuItem getS3FShellMenuItem() {
+        JMenuItem i = new JMenuItem("Shell");
+        ActionListener actionListener = new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (shell == null) {
+                    HashMap<String, Object> var = new HashMap<>();
+                    var.put("pluginManager", PluginManager.getPluginManager());
+                    
+                    HashMap<String[], Class> func = new HashMap<>();
+                    //func.put(new String[]{"TEST_FUNC"}, PluginManager.class);
+                    
+                    shell = new MyJSConsole(var, func);
+                    Dimension screen = Toolkit.getDefaultToolkit().getScreenSize();
+                    Rectangle frame = shell.getBounds();
+                    shell.setLocation((screen.width - frame.width) / 2, (screen.height - frame.height) / 2);
+                }
+                shell.setVisible(true);
+            }
+        };
+        i.addActionListener(actionListener);
+        return i;
     }
 
     public static void setStatus() {
@@ -168,11 +222,13 @@ public class MainUI implements Extensible {
 
     public void loadModulesFrom(PluginManager pm) {
 
+        pm.PRINT_TEST();
+
         String platformName = pm.getFactoryData("s3f").getProperty("platform_name");
         String platformVersion = pm.getFactoryData("s3f").getProperty("platform_version");
 
-        String title = "Scalable Systems and Simulations Framework [ "
-                + ((platformName == null) ? "" : platformName)
+        String title = PluginManager.getText("s3f.frame.name") + " [ "
+                + ((platformName == null) ? PluginManager.getText("s3f.frame.defaultplatformtitle") : platformName)
                 + ((platformVersion == null) ? "" : " | " + platformVersion) + " ]";
         window.setTitle(title);
 
@@ -243,24 +299,34 @@ public class MainUI implements Extensible {
             }
         }
 
+        JMenu S3FMenu = new JMenu((hideS3FMenu) ? "     " : PluginManager.getText("s3f.menu"));
+        S3FMenu.add(getS3FPluginConfigurationMenuItem());
+        S3FMenu.add(getS3FShellMenuItem());
+        S3FMenu.addSeparator();
+        JMenuItem i;
+        i = new JMenuItem(PluginManager.getText("s3f.item.about"));
+        S3FMenu.add(i);
+
+        menuBar.add(S3FMenu);
+
         //testes
-        pm.PRINT_TEST();
-
-        ArrayList<Data> a = new ArrayList<>();
-
-        String b = pm.search("s3f.jifi", pm.getFactoryData("s3f"), a);
-
-        System.out.println("error in : '" + b + "'");
-        for (Data d : a) {
-            System.out.println(d);
-        }
-
-        Class c = pm.getFactoryData("s3f.dwrs.Hello2").getProperty("teste");
-        try {
-            Object o = c.newInstance();
-            System.out.println(o);
-        } catch (Exception ex) {
-            System.out.println(ex.getClass());
-        }
+//        pm.PRINT_TEST();
+//
+//        ArrayList<Data> a = new ArrayList<>();
+//
+//        String b = pm.search("s3f.jifi", pm.getFactoryData("s3f"), a);
+//
+//        System.out.println("error in : '" + b + "'");
+//        for (Data d : a) {
+//            System.out.println(d);
+//        }
+//
+//        Class c = pm.getFactoryData("s3f.dwrs.Hello2").getProperty("teste");
+//        try {
+//            Object o = c.newInstance();
+//            System.out.println(o);
+//        } catch (Exception ex) {
+//            System.out.println(ex.getClass());
+//        }
     }
 }

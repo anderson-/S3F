@@ -24,7 +24,11 @@ package s3f.base.plugin;
 import java.util.List;
 
 public class PluginPOJO {
+
     public String name;
+    public String fullName;
+    public String path;
+    public String langFolder;
     public String version;
     public List<String> dependencies;
     public List<String> content;
@@ -32,4 +36,5 @@ public class PluginPOJO {
     public Boolean platform;
     public Boolean extension;
     public Boolean pack;
+    public List<String> nativeLibs;
 }

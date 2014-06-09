@@ -8,12 +8,14 @@ package s3f.base.ui;
 import java.awt.Component;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.ResourceBundle;
 import javax.swing.JComponent;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JToolBar;
 import s3f.base.plugin.Data;
 import s3f.base.plugin.Plugabble;
+import s3f.base.plugin.PluginManager;
 import s3f.base.ui.tab.Tab;
 
 /**
@@ -23,6 +25,7 @@ import s3f.base.ui.tab.Tab;
 public abstract class GUIBuilder implements Plugabble {
 
     private final Data data;
+    private ResourceBundle bundle;
 
     public static class Element<T> implements Comparable<Element> {
 
@@ -59,7 +62,8 @@ public abstract class GUIBuilder implements Plugabble {
     private final ArrayList<Element<Tab>> tabs = new ArrayList<>();
 
     public GUIBuilder(String pluginName) {
-        data = new Data("s3f.guibuilder", pluginName, Data.SINGLETON);
+        data = new Data(pluginName, "s3f.guibuilder", pluginName);
+        bundle = PluginManager.getbundle(pluginName);
     }
 
     /**
@@ -77,6 +81,10 @@ public abstract class GUIBuilder implements Plugabble {
     @Override
     public Plugabble createInstance() {
         return null;
+    }
+    
+    protected String getString(String key){
+        return bundle.getString(key);
     }
 
     public void addMenubar(JMenu menu, int priority) {

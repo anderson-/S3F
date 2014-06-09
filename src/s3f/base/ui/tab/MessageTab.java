@@ -55,7 +55,7 @@ public class MessageTab implements Tab {
     public MessageTab() {
         table = new JTable(model);
         scrollPane = new JScrollPane(table);
-        data = new Data("s3f.base.ui", "MessageTab", Data._EMPTY_FIELD);
+        data = new Data("messageTab", "s3f.base.ui", "MessageTab");
         TabProperty.put(data, "Mensagens", null, "testet", scrollPane);
 
         TableColumn column;

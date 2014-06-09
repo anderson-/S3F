@@ -36,7 +36,7 @@ public class TESTE {
         private final Data data;
 
         public TmpTab(String title, Icon icon, String tooltip, Component component) {
-            data = new Data("s3f.teste", "TmpTab", Data._EMPTY_FIELD);
+            data = new Data("tmp", "s3f.teste", "TmpTab");
             TabProperty.put(data, title, icon, tooltip, component);
         }
 
