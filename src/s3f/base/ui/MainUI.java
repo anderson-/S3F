@@ -34,7 +34,10 @@ import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
 import java.util.Arrays;
 import java.util.HashMap;
+import javax.swing.AbstractAction;
+import javax.swing.Action;
 import javax.swing.BoxLayout;
+import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JMenu;
@@ -42,12 +45,14 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JToolBar;
+import javax.swing.KeyStroke;
 import javax.swing.UIManager;
 import javax.swing.WindowConstants;
 import s3f.base.plugin.Data;
 import s3f.base.plugin.Extensible;
 import s3f.base.plugin.PluginManager;
 import s3f.base.script.MyJSConsole;
+import s3f.base.script.ScriptEnvironment;
 import s3f.base.ui.tab.Tab;
 import s3f.base.ui.tab.tabbedpaneview.TabbedPaneView;
 import s3f.util.SplashScreen;
@@ -63,15 +68,20 @@ public class MainUI implements Extensible {
     private TabbedPaneView mainView;
     private JToolBar statusBar;
     private JLabel statusLabel;
-    private boolean hideS3FMenu = false;
     private PluginConfigurationWindow pluginConfigurationWindow = null;
-    private MyJSConsole shell = null;
+    private MyJSConsole terminal = null;
+    //actions
+    private AbstractAction createAndShowTerminal;
+    private AbstractAction createAndShowConfigurationWindow;
 
     private MainUI() {
-        createAndShowUI();
+        
+        createUI();
+        createActions();
+        addKeyBindings();
     }
 
-    private void createAndShowUI() {
+    private void createUI() {
         //janela
         window = new JFrame();
         window.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
@@ -127,7 +137,7 @@ public class MainUI implements Extensible {
         statusBar.add(statusLabel);
 
         window.getContentPane().add(statusBar, BorderLayout.SOUTH);
-
+        
         //finaliza
         window.pack();
     }
@@ -140,14 +150,22 @@ public class MainUI implements Extensible {
         //torna a janela visivel
         window.setVisible(true);
     }
-
-    public void hideS3FMenu(boolean hideS3FMenu) {
-        this.hideS3FMenu = hideS3FMenu;
-    }
-
-    public JMenuItem getS3FPluginConfigurationMenuItem() {
-        JMenuItem i = new JMenuItem(PluginManager.getText("pcw.item.name"));
-        ActionListener actionListener = new ActionListener() {
+    
+    private void createActions(){
+        createAndShowTerminal = new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (terminal == null) {
+                    terminal = new MyJSConsole(ScriptEnvironment.getVariables(), ScriptEnvironment.getFunctions());
+                    Dimension screen = Toolkit.getDefaultToolkit().getScreenSize();
+                    Rectangle frame = terminal.getBounds();
+                    terminal.setLocation((screen.width - frame.width) / 2, (screen.height - frame.height) / 2);
+                }
+                terminal.setVisible(true);
+            }
+        };
+        
+        createAndShowConfigurationWindow = new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 if (pluginConfigurationWindow == null) {
@@ -156,31 +174,22 @@ public class MainUI implements Extensible {
                 pluginConfigurationWindow.show(true);
             }
         };
-        i.addActionListener(actionListener);
+    }
+    
+    private void addKeyBindings() {
+        window.getRootPane().getActionMap().put("myAction", createAndShowTerminal);
+        window.getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("control shift A"), "myAction");
+    }
+
+    public JMenuItem getS3FPluginConfigurationMenuItem() {
+        JMenuItem i = new JMenuItem(PluginManager.getText("pcw.item.name"));
+        i.addActionListener(createAndShowConfigurationWindow);
         return i;
     }
 
     public JMenuItem getS3FShellMenuItem() {
-        JMenuItem i = new JMenuItem("Shell");
-        ActionListener actionListener = new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                if (shell == null) {
-                    HashMap<String, Object> var = new HashMap<>();
-                    var.put("pluginManager", PluginManager.getPluginManager());
-                    
-                    HashMap<String[], Class> func = new HashMap<>();
-                    //func.put(new String[]{"TEST_FUNC"}, PluginManager.class);
-                    
-                    shell = new MyJSConsole(var, func);
-                    Dimension screen = Toolkit.getDefaultToolkit().getScreenSize();
-                    Rectangle frame = shell.getBounds();
-                    shell.setLocation((screen.width - frame.width) / 2, (screen.height - frame.height) / 2);
-                }
-                shell.setVisible(true);
-            }
-        };
-        i.addActionListener(actionListener);
+        JMenuItem i = new JMenuItem("Terminal");
+        i.addActionListener(createAndShowTerminal);
         return i;
     }
 
@@ -222,8 +231,7 @@ public class MainUI implements Extensible {
 
     public void loadModulesFrom(PluginManager pm) {
 
-        pm.PRINT_TEST();
-
+        //pm.PRINT_TEST();
         String platformName = pm.getFactoryData("s3f").getProperty("platform_name");
         String platformVersion = pm.getFactoryData("s3f").getProperty("platform_version");
 
@@ -299,7 +307,9 @@ public class MainUI implements Extensible {
             }
         }
 
-        JMenu S3FMenu = new JMenu((hideS3FMenu) ? "     " : PluginManager.getText("s3f.menu"));
+        Object o = PluginManager.getPluginManager().getFactoryProperty("s3f", "hideS3Fmenu");
+        boolean hideS3Fmenu = o != null && o instanceof Boolean && ((Boolean) o) == true;
+        JMenu S3FMenu = new JMenu((hideS3Fmenu) ? "     " : PluginManager.getText("s3f.menu"));
         S3FMenu.add(getS3FPluginConfigurationMenuItem());
         S3FMenu.add(getS3FShellMenuItem());
         S3FMenu.addSeparator();
@@ -329,4 +339,5 @@ public class MainUI implements Extensible {
 //            System.out.println(ex.getClass());
 //        }
     }
+
 }

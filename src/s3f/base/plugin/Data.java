@@ -157,13 +157,13 @@ public final class Data {
     }
 
     private void printTree(String prefix, boolean isTail) {
-        System.out.println(prefix + (isTail ? "└── " : "├── ") + name + " : \"" + fullName + "\"");
+        System.out.println(prefix + (isTail ? " '--> " : " +--> ") + name + " - \"" + fullName + "\"");
         if (children != null) {
             for (int i = 0; i < children.size() - 1; i++) {
-                children.get(i).printTree(prefix + (isTail ? "    " : "│   "), false);
+                children.get(i).printTree(prefix + (isTail ? "      " : " :    "), false);
             }
             if (children.size() >= 1) {
-                children.get(children.size() - 1).printTree(prefix + (isTail ? "    " : "│   "), true);
+                children.get(children.size() - 1).printTree(prefix + (isTail ? "      " : " :    "), true);
             }
         }
     }

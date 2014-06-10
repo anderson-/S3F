@@ -97,6 +97,7 @@ public abstract class GUIBuilder implements Plugabble {
 
     public void addTab(Tab tab, int priority) {
         tabs.add(new Element<>(tab, priority));
+        data.addChild(tab.getData());
     }
 
     public ArrayList<JMenu> getMenus() {

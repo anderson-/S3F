@@ -5,6 +5,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 package s3f.base.script;
 
+import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
@@ -30,6 +31,8 @@ import javax.swing.JRadioButtonMenuItem;
 import javax.swing.JScrollPane;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
+import javax.swing.text.Document;
+import javax.swing.text.Segment;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Function;
 import org.mozilla.javascript.Scriptable;
@@ -55,7 +58,8 @@ public class MyJSConsole extends JFrame implements ActionListener {
     }
 
     public MyJSConsole(Map<String, Object> vars, Map<String[], Class> funcs) {
-        super("Rhino JavaScript Console");
+        super("S3F JavaScript Console");
+        this.setAlwaysOnTop(true);
         JMenuBar menubar = new JMenuBar();
         createFileChooser();
         String[] fileItems = {"Load...", "Close"};
@@ -96,9 +100,12 @@ public class MyJSConsole extends JFrame implements ActionListener {
         menubar.add(editMenu);
         menubar.add(plafMenu);
         setJMenuBar(menubar);
-        consoleTextArea = new ConsoleTextArea(args);
+        consoleTextArea = new MyConsoleTextArea(args);
         JScrollPane scroller = new JScrollPane(consoleTextArea);
         setContentPane(scroller);
+        int changeMe = 14;
+        consoleTextArea.setFont(new Font("Monospaced", Font.PLAIN, changeMe));
+
         consoleTextArea.setRows(24);
         consoleTextArea.setColumns(80);
         //setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
@@ -113,19 +120,23 @@ public class MyJSConsole extends JFrame implements ActionListener {
         System.setIn(consoleTextArea.getIn());
         System.setOut(consoleTextArea.getOut());
         System.setErr(consoleTextArea.getErr());
-        
-        consoleTextArea.getOut().append("*****************\n");
-        consoleTextArea.getOut().append("*               *\n");
-        consoleTextArea.getOut().append("*****************\n");
-        consoleTextArea.getOut().append("Toda a saída de texto padrão será redirecionada para este terminal durante a seção\n");
+
+        //consoleTextArea.write("Toda a saída de texto padrão será redirecionada para este terminal durante a seção\n");
+        consoleTextArea.getOut().append("  ___ _______ \n");
+        consoleTextArea.getOut().append(" / __|__ / __|\n");
+        consoleTextArea.getOut().append(" \\__ \\|_ \\ _| \n");
+        consoleTextArea.getOut().append(" |___/___/_|  v0.5\n");
+        consoleTextArea.getOut().append("\n");
+        //consoleTextArea.getOut().append("Toda a saída de texto padrão será redirecionada para este terminal durante a seção\n");
 
         Main.setIn(consoleTextArea.getIn());
         Main.setOut(consoleTextArea.getOut());
         Main.setErr(consoleTextArea.getErr());
 
+        //consoleTextArea.eval("pluginManager.PRINT_TEST();");
         Global global = Main.getGlobal();
-
-        global.defineFunctionProperties(new String[]{"test"}, MyJSConsole.class, ScriptableObject.DONTENUM);
+        global.getPrompts(null)[0] = "js>";
+        global.getPrompts(null)[1] = ">";
 
         if (vars != null) {
             for (Entry<String, Object> var : vars.entrySet()) {
@@ -139,12 +150,6 @@ public class MyJSConsole extends JFrame implements ActionListener {
             }
         }
 
-//        try {
-//            String str = "print('hi');";
-//            Main.setIn(new ByteArrayInputStream(str.getBytes("UTF-8")));
-//        } catch (UnsupportedEncodingException ex) {
-//            System.out.println("ops");
-//        }
         new Thread() {
             @Override
             public void run() {
@@ -166,7 +171,7 @@ public class MyJSConsole extends JFrame implements ActionListener {
         }
         super.setVisible(visible);
     }
-    
+
     public String chooseFile() {
         if (CWD == null) {
             String dir = SecurityUtilities.getSystemProperty("user.dir");
@@ -185,10 +190,6 @@ public class MyJSConsole extends JFrame implements ActionListener {
             return result;
         }
         return null;
-    }
-
-    public static void main(String args[]) {
-        new MyJSConsole();
     }
 
     public void createFileChooser() {
@@ -262,25 +263,4 @@ public class MyJSConsole extends JFrame implements ActionListener {
             }
         }
     }
-
-    public static void test(Context cx, Scriptable thisObj, Object[] args, Function funObj) {
-        System.out.println("isso eh um teste! :D");
-    }
-
-    public static Object print(Context cx, Scriptable thisObj, Object[] args, Function funObj) {
-        PrintStream out = System.out;
-        for (int i = 0; i < args.length; i++) {
-            if (i > 0) {
-                out.print(" ");
-            }
-
-            // Convert the arbitrary JavaScript value into a string form.
-            String s = Context.toString(args[i]);
-
-            out.print(s);
-        }
-        out.println();
-        return Context.getUndefinedValue();
-    }
-
 }

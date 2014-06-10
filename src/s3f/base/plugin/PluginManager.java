@@ -37,10 +37,16 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.PropertyResourceBundle;
 import java.util.ResourceBundle;
+import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.script.Invocable;
+import javax.script.ScriptException;
+import s3f.base.script.ScriptManager;
 import s3f.base.ui.GUIBuilder;
 import s3f.util.fommil.jni.JniNamer;
 import s3f.util.toml.impl.Toml;
@@ -52,7 +58,7 @@ public class PluginManager {
     public static PluginManager getPluginManager() {
         if (PLUGIN_MANAGER == null) {
             PLUGIN_MANAGER = new PluginManager();
-            loadPlugins();
+            PLUGIN_MANAGER.init();
         }
         return PLUGIN_MANAGER;
     }
@@ -80,93 +86,6 @@ public class PluginManager {
             return bundle.getString(key);
         }
         return "#" + pluginShortName + "#" + key + "#";
-    }
-
-    /**
-     * Inicializa a árvore do gerenciador de plugins.
-     *
-     * Este método é responsável por fazer o carregamento, ativação e
-     * configuração dos plugins.
-     */
-    private static void loadPlugins() {
-        String classRunningPath = PluginManager.class.getProtectionDomain().getCodeSource().getLocation().getPath();
-
-        if (classRunningPath.contains(".jar")) {
-            int i = classRunningPath.lastIndexOf('/');
-            classRunningPath = classRunningPath.substring(0, i);
-
-            File pluginsDir = new File(classRunningPath + "/plugins");
-
-            if (pluginsDir.isDirectory()) {
-                File[] directoryListing = pluginsDir.listFiles();
-                if (directoryListing != null) {
-                    for (File child : directoryListing) {
-                        if (child.getName().contains(".jar")) {
-                            PluginManager.getPluginManager().loadPlugin(child.getAbsolutePath());
-                        }
-                    }
-                } else {
-                    // Handle the case where dir is not really a directory.
-                    // Checking dir.isDirectory() above would not be sufficient
-                    // to avoid race conditions with another process that deletes
-                    // directories.
-                }
-            }
-
-            File dataDir = new File(classRunningPath + "/data");
-
-        } else {
-            //PluginManager.getPluginManager().loadSoftPlugin("s3f/base/plugin.cfg");
-        }
-        System.gc();
-        runUserScripts();
-    }
-
-    private static void runUserScripts() {
-        String classRunningPath = PluginManager.class.getProtectionDomain().getCodeSource().getLocation().getPath();
-        ArrayList<String> scripts = new ArrayList<>();
-
-        if (classRunningPath.contains(".jar")) {
-            int i = classRunningPath.lastIndexOf('/');
-            classRunningPath = classRunningPath.substring(0, i);
-
-            File scriptsDir = new File(classRunningPath + "/userjs");
-
-            if (scriptsDir.isDirectory()) {
-                File[] directoryListing = scriptsDir.listFiles();
-                if (directoryListing != null) {
-                    for (File child : directoryListing) {
-                        if (child.getName().contains(".js")) {
-                            InputStream is = null;
-                            try {
-                                is = new FileInputStream(child);
-                                if (is != null) {
-                                    String script = convertInputStreamToString(is);
-                                    scripts.add(script);
-                                }
-                            } catch (FileNotFoundException ex) {
-                            } finally {
-                                try {
-                                    is.close();
-                                } catch (IOException ex) {
-                                    ex.printStackTrace();
-                                }
-                            }
-                        }
-                    }
-                } else {
-                    // Handle the case where dir is not really a directory.
-                    // Checking dir.isDirectory() above would not be sufficient
-                    // to avoid race conditions with another process that deletes
-                    // directories.
-                }
-            }
-        }
-
-        for (String script : scripts) {
-
-        }
-        System.gc();
     }
 
     /**
@@ -205,6 +124,157 @@ public class PluginManager {
 //        } catch (IOException ex) {
 //            Logger.getLogger(PluginManager.class.getName()).log(Level.SEVERE, null, ex);
 //        }
+    }
+
+    private void init() {
+        loadPlugins();
+        loadConfigurationFiles();
+        runUserScripts();
+    }
+
+    /**
+     * Inicializa a árvore do gerenciador de plugins.
+     *
+     * Este método é responsável por fazer o carregamento, ativação e
+     * configuração dos plugins.
+     */
+    private void loadPlugins() {
+        String classRunningPath = PluginManager.class.getProtectionDomain().getCodeSource().getLocation().getPath();
+
+        if (classRunningPath.endsWith(".jar")) {
+            int i = classRunningPath.lastIndexOf('/');
+            classRunningPath = classRunningPath.substring(0, i);
+
+            File pluginsDir = new File(classRunningPath + "/plugins");
+
+            if (pluginsDir.isDirectory()) {
+                File[] directoryListing = pluginsDir.listFiles();
+                if (directoryListing != null) {
+                    for (File child : directoryListing) {
+                        if (child.getName().endsWith(".jar")) {
+                            loadPlugin(child.getAbsolutePath());
+                        }
+                    }
+                } else {
+                    // Handle the case where dir is not really a directory.
+                    // Checking dir.isDirectory() above would not be sufficient
+                    // to avoid race conditions with another process that deletes
+                    // directories.
+                }
+            }
+
+            File dataDir = new File(classRunningPath + "/data");
+
+        } else {
+            //PluginManager.getPluginManager().loadSoftPlugin("s3f/base/plugin.cfg");
+        }
+        System.gc();
+    }
+
+    private void loadConfigurationFiles() {
+        String classRunningPath = PluginManager.class.getProtectionDomain().getCodeSource().getLocation().getPath();
+
+        if (classRunningPath.endsWith(".jar")) {
+            int i = classRunningPath.lastIndexOf('/');
+            classRunningPath = classRunningPath.substring(0, i);
+
+            File scriptsDir = new File(classRunningPath + "/data");
+
+            if (scriptsDir.isDirectory()) {
+                File[] directoryListing = scriptsDir.listFiles();
+                if (directoryListing != null) {
+                    for (File child : directoryListing) {
+                        if (child.getName().endsWith(".cfg")) {
+                            InputStream is = null;
+                            try {
+                                is = new FileInputStream(child);
+                                if (is != null) {
+                                    Data data = this.getFactoryData(child.getName().substring(0, child.getName().lastIndexOf('.')));
+                                    if (data != null) {
+                                        String cfg = convertInputStreamToString(is);
+                                        Toml parser = Toml.parse(cfg);
+                                        Map<String, Object> map = parser.getMap("config");
+                                        if (map != null) {
+                                            for (Entry<String, Object> e : map.entrySet()) {
+                                                data.setProperty(e.getKey(), e.getValue());
+                                            }
+                                        }
+                                    }
+                                }
+                            } catch (FileNotFoundException ex) {
+                            } finally {
+                                try {
+                                    is.close();
+                                } catch (IOException ex) {
+                                    ex.printStackTrace();
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    // Handle the case where dir is not really a directory.
+                    // Checking dir.isDirectory() above would not be sufficient
+                    // to avoid race conditions with another process that deletes
+                    // directories.
+                }
+            }
+        }
+    }
+
+    private void runUserScripts() {
+        String classRunningPath = PluginManager.class.getProtectionDomain().getCodeSource().getLocation().getPath();
+        TreeMap<String, String> scripts = new TreeMap<>();
+        List<String> suportedExtensions = ScriptManager.getSuportedExtensions();
+
+        if (classRunningPath.endsWith(".jar")) {
+            int i = classRunningPath.lastIndexOf('/');
+            classRunningPath = classRunningPath.substring(0, i);
+
+            File scriptsDir = new File(classRunningPath + "/myScripts");
+
+            if (scriptsDir.isDirectory()) {
+                File[] directoryListing = scriptsDir.listFiles();
+                if (directoryListing != null) {
+                    for (File child : directoryListing) {
+                        for (String ext : suportedExtensions) {
+                            if (child.getName().endsWith(ext)) {
+                                InputStream is = null;
+                                try {
+                                    is = new FileInputStream(child);
+                                    String script = convertInputStreamToString(is);
+                                    scripts.put(child.getName(), script);
+                                } catch (FileNotFoundException ex) {
+                                } finally {
+                                    try {
+                                        if (is != null) {
+                                            is.close();
+                                        }
+                                    } catch (IOException e) {
+                                        e.printStackTrace();
+                                    }
+                                }
+                                continue;
+                            }
+                        }
+                    }
+                } else {
+                    // Handle the case where dir is not really a directory.
+                    // Checking dir.isDirectory() above would not be sufficient
+                    // to avoid race conditions with another process that deletes
+                    // directories.
+                }
+            }
+        }
+
+        for (Entry<String, String> e : scripts.entrySet()) {
+            try {
+                Invocable runScript = ScriptManager.runScript(e.getValue(), e.getKey().substring(e.getKey().lastIndexOf('.') + 1), null);
+                ScriptManager.createDrawingFrame(runScript, 10);
+            } catch (ScriptException ex) {
+                ex.printStackTrace();
+            }
+        }
+        System.gc();
     }
 
     @Deprecated
