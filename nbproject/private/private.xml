@@ -1,14 +1,27 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project-private xmlns="http://www.netbeans.org/ns/project-private/1">
-    <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="0"/>
+    <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="3">
+        <file>
+            <url>src/s3f/base/script/MyConsoleTextArea.java</url>
+            <bookmark id="3">
+                <name/>
+                <line>144</line>
+                <key/>
+            </bookmark>
+            <bookmark id="1">
+                <name/>
+                <line>311</line>
+                <key/>
+            </bookmark>
+        </file>
+    </editor-bookmarks>
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
         <group>
-            <file>file:/home/antunes/NetBeansProjects/S3F/src/s3f/base/plugin/PluginManager.java</file>
-            <file>file:/home/antunes/NetBeansProjects/S3F/src/s3f/base/script/ScriptManager.java</file>
-            <file>file:/home/antunes/NetBeansProjects/S3F/src/s3f/base/script/ScriptEnvironment.java</file>
-            <file>file:/home/antunes/NetBeansProjects/S3F/src/s3f/base/script/MyConsoleTextArea.java</file>
+            <file>file:/home/antunes/NetBeansProjects/S3F/src/s3f/base/ui/tab/TabProperty.java</file>
+            <file>file:/home/antunes/NetBeansProjects/S3F/src/s3f/base/ui/tab/Tab.java</file>
+            <file>file:/home/antunes/NetBeansProjects/S3F/src/s3f/base/project/OLDproject/FileCreator.java</file>
+            <file>file:/home/antunes/NetBeansProjects/S3F/src/s3f/base/project/OLDproject/Project.java</file>
             <file>file:/home/antunes/NetBeansProjects/S3F/src/s3f/base/ui/MainUI.java</file>
-            <file>file:/home/antunes/NetBeansProjects/S3F/src/s3f/base/script/MyJSConsole.java</file>
         </group>
     </open-files>
 </project-private>

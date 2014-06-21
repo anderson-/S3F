@@ -26,7 +26,6 @@ import s3f.base.ui.tab.Tab;
  */
 public class Project {
 
-    private static final String tmpdir = System.getProperty("java.io.tmpdir");
     public static final String FILE_EXTENSION = "proj";
     private final ArrayList<Element> elements = new ArrayList<>();
     private final ArrayList<CategoryData> categories = new ArrayList<>();

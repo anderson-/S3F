@@ -8,18 +8,20 @@ package s3f.base.script;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map.Entry;
 import javax.swing.*;
 import javax.swing.event.*;
 import javax.swing.text.Document;
 import javax.swing.text.Segment;
-import org.mozilla.javascript.tools.shell.ConsoleTextArea;
 
 class ConsoleWrite implements Runnable {
 
-    private ConsoleTextArea textArea;
+    private MyConsoleTextArea textArea;
     private String str;
 
-    public ConsoleWrite(ConsoleTextArea textArea, String str) {
+    public ConsoleWrite(MyConsoleTextArea textArea, String str) {
         this.textArea = textArea;
         this.str = str;
     }
@@ -31,10 +33,10 @@ class ConsoleWrite implements Runnable {
 
 class ConsoleWriter extends java.io.OutputStream {
 
-    private ConsoleTextArea textArea;
+    private MyConsoleTextArea textArea;
     private StringBuffer buffer;
 
-    public ConsoleWriter(ConsoleTextArea textArea) {
+    public ConsoleWriter(MyConsoleTextArea textArea) {
         this.textArea = textArea;
         buffer = new StringBuffer();
     }
@@ -75,8 +77,20 @@ class ConsoleWriter extends java.io.OutputStream {
     }
 }
 
+interface Preprocessor {
+
+    /**
+     *
+     * @param cmd
+     * @return NULL se não for o comando certo, ou o novo comando a ser
+     * executado
+     */
+    public String preprocessCommand(String cmd);
+
+}
+
 public class MyConsoleTextArea
-        extends ConsoleTextArea implements KeyListener, DocumentListener {
+        extends JTextArea implements KeyListener, DocumentListener {
 
     static final long serialVersionUID = 8557083244830872961L;
 
@@ -89,6 +103,16 @@ public class MyConsoleTextArea
     private java.util.List<String> history;
     private int historyIndex = -1;
     private int outputMark = 0;
+    private boolean preprocessorsEnabled = false;
+    private ArrayList<Preprocessor> preprocessors;
+
+    public void enablePreprocessors(boolean v) {
+        preprocessorsEnabled = v;
+    }
+
+    public java.util.List<Preprocessor> getPreprocessors() {
+        return preprocessors;
+    }
 
     @Override
     public void select(int start, int end) {
@@ -97,7 +121,7 @@ public class MyConsoleTextArea
     }
 
     public MyConsoleTextArea(String[] argv) {
-        super(argv);
+        super();
         history = new java.util.ArrayList<String>();
         console1 = new ConsoleWriter(this);
         console2 = new ConsoleWriter(this);
@@ -106,6 +130,7 @@ public class MyConsoleTextArea
         PipedOutputStream outPipe = new PipedOutputStream();
         inPipe = new PrintWriter(outPipe);
         in = new PipedInputStream();
+        preprocessors = new ArrayList<>();
         try {
             outPipe.connect(in);
         } catch (IOException exc) {
@@ -127,11 +152,20 @@ public class MyConsoleTextArea
             ignored.printStackTrace();
         }
 
-        processSegment(segment);
+        Segment newSegment = null;
+
+        if (preprocessorsEnabled) {
+            newSegment = processSegment(segment);
+        }
 
         if (segment.count > 0) {
             history.add(segment.toString());
         }
+
+        if (newSegment != null) {
+            segment = newSegment;
+        }
+
         historyIndex = history.size();
         inPipe.write(segment.array, segment.offset, segment.count);
         append("\n");
@@ -275,16 +309,21 @@ public class MyConsoleTextArea
         return err;
     }
 
-    /**
-     * Tentativa de pré-processar um comando.
-     * @param segment
-     * @return 
-     */
     private Segment processSegment(Segment segment) {
-//        if (segment.toString().equals("cd ..")) {
-//            System.out.println("*");
-//            segment = new Segment("help();".toCharArray(), 0, 8);
-//        }
+
+        String cmd = segment.toString();
+        String ncmd = null;
+
+        for (Preprocessor pp : preprocessors) {
+            ncmd = pp.preprocessCommand(cmd);
+            if (ncmd != null) {
+                break;
+            }
+        }
+
+        if (ncmd != null) {
+            segment = new Segment(ncmd.toCharArray(), 0, ncmd.length());
+        }
 
         return segment;
     }

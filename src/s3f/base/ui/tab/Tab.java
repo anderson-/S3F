@@ -10,7 +10,6 @@ import java.awt.Graphics;
 import javax.swing.Icon;
 import javax.swing.JTabbedPane;
 import s3f.base.plugin.Plugabble;
-import s3f.base.ui.tab.tabbedpaneview.dndtabbedpane.TabComponent;
 
 /**
  *

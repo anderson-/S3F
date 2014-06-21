@@ -21,6 +21,7 @@
  */
 package s3f.base.plugin;
 
+import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -152,18 +153,18 @@ public final class Data {
         //TODO
     }
 
-    public void printTree() {
-        printTree("", true);
+    public void printTree(PrintStream out) {
+        printTree("", true, out);
     }
 
-    private void printTree(String prefix, boolean isTail) {
-        System.out.println(prefix + (isTail ? " '--> " : " +--> ") + name + " - \"" + fullName + "\"");
+    private void printTree(String prefix, boolean isTail, PrintStream out) {
+        out.println(prefix + (isTail ? " '--> " : " +--> ") + name + " - \"" + fullName + "\"");
         if (children != null) {
             for (int i = 0; i < children.size() - 1; i++) {
-                children.get(i).printTree(prefix + (isTail ? "      " : " :    "), false);
+                children.get(i).printTree(prefix + (isTail ? "      " : " :    "), false, out);
             }
             if (children.size() >= 1) {
-                children.get(children.size() - 1).printTree(prefix + (isTail ? "      " : " :    "), true);
+                children.get(children.size() - 1).printTree(prefix + (isTail ? "      " : " :    "), true, out);
             }
         }
     }

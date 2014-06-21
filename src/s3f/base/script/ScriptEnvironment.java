@@ -30,10 +30,15 @@ public class ScriptEnvironment {
         HashMap<String[], Class> func = new HashMap<>();
         //vetor com os nomes das funções publicas e estaticas, classe
         func.put(new String[]{"printExample"}, ScriptEnvironment.class);
+        func.put(new String[]{"tree"}, ScriptEnvironment.class);
         func.put(new String[]{"printHistory"}, ScriptEnvironment.class);
         return func;
     }
 
+    public static void tree(Context cx, Scriptable thisObj, Object[] args, Function funObj) {
+        PluginManager.getPluginManager().printTree(System.out);
+    }
+    
     public static void printHistory(Context cx, Scriptable thisObj, Object[] args, Function funObj) {
         for (String s : ScriptManager.getExecutionHistory()){
             System.out.println(s);

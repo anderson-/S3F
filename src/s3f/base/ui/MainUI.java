@@ -22,21 +22,24 @@
 package s3f.base.ui;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.FlowLayout;
+import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
-import java.util.Arrays;
-import java.util.HashMap;
+import java.util.ArrayList;
 import javax.swing.AbstractAction;
-import javax.swing.Action;
 import javax.swing.BoxLayout;
+import javax.swing.ButtonGroup;
+import javax.swing.Icon;
+import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -44,19 +47,43 @@ import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
+import javax.swing.JRadioButtonMenuItem;
+import javax.swing.JSeparator;
 import javax.swing.JToolBar;
 import javax.swing.KeyStroke;
+import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.WindowConstants;
+import net.infonode.docking.DockingWindow;
+import net.infonode.docking.FloatingWindow;
+import net.infonode.docking.RootWindow;
+import net.infonode.docking.SplitWindow;
+import net.infonode.docking.TabWindow;
+import net.infonode.docking.View;
+import net.infonode.docking.mouse.DockingWindowActionMouseButtonListener;
+import net.infonode.docking.properties.RootWindowProperties;
+import net.infonode.docking.theme.BlueHighlightDockingTheme;
+import net.infonode.docking.theme.ClassicDockingTheme;
+import net.infonode.docking.theme.DefaultDockingTheme;
+import net.infonode.docking.theme.DockingWindowsTheme;
+import net.infonode.docking.theme.GradientDockingTheme;
+import net.infonode.docking.theme.LookAndFeelDockingTheme;
+import net.infonode.docking.theme.ShapedGradientDockingTheme;
+import net.infonode.docking.theme.SlimFlatDockingTheme;
+import net.infonode.docking.theme.SoftBlueIceDockingTheme;
+import net.infonode.docking.util.DockingUtil;
+import net.infonode.docking.util.PropertiesUtil;
+import net.infonode.docking.util.ViewMap;
+import net.infonode.gui.laf.InfoNodeLookAndFeel;
+import net.infonode.gui.laf.InfoNodeLookAndFeelTheme;
 import s3f.base.plugin.Data;
 import s3f.base.plugin.Extensible;
 import s3f.base.plugin.PluginManager;
 import s3f.base.script.MyJSConsole;
 import s3f.base.script.ScriptEnvironment;
 import s3f.base.ui.tab.Tab;
-import s3f.base.ui.tab.tabbedpaneview.TabbedPaneView;
+import s3f.base.ui.tab.TabProperty;
 import s3f.util.SplashScreen;
-import sun.org.mozilla.javascript.tools.shell.JSConsole;
 
 public class MainUI implements Extensible {
 
@@ -65,7 +92,9 @@ public class MainUI implements Extensible {
     private JPanel toolBarPanel;
     private ComponentListener componentListener;
     private JPanel mainPanel;
-    private TabbedPaneView mainView;
+    private RootWindow rootWindow;
+    private DockingWindowsTheme currentTheme = new net.infonode.docking.theme.DefaultDockingTheme();
+    private RootWindowProperties properties = new RootWindowProperties();
     private JToolBar statusBar;
     private JLabel statusLabel;
     private PluginConfigurationWindow pluginConfigurationWindow = null;
@@ -75,7 +104,6 @@ public class MainUI implements Extensible {
     private AbstractAction createAndShowConfigurationWindow;
 
     private MainUI() {
-        
         createUI();
         createActions();
         addKeyBindings();
@@ -98,6 +126,7 @@ public class MainUI implements Extensible {
 //        jMenu2.setText("Edit");
 //        menuBar.add(jMenu2);
 
+        //menu bar
         window.setJMenuBar(menuBar);
 
         //toolBar
@@ -110,9 +139,18 @@ public class MainUI implements Extensible {
         mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.PAGE_AXIS));
         window.getContentPane().add(mainPanel, BorderLayout.CENTER);
 
-        mainView = new TabbedPaneView();
-        mainPanel.add(mainView.getJPanel());
+        //docking windows
+        rootWindow = new RootWindow(null);
+        rootWindow.setBorder(null);
+        properties.addSuperObject(currentTheme.getRootWindowProperties());
+        rootWindow.getRootWindowProperties().addSuperObject(properties);
+        // Add a mouse button listener that closes a window when it's clicked with the middle mouse button.
+        rootWindow.addTabMouseButtonListener(DockingWindowActionMouseButtonListener.MIDDLE_BUTTON_CLOSE_LISTENER);
+        mainPanel.add(rootWindow);
 
+//        RootWindowProperties titleBarStyleProperties = PropertiesUtil.createTitleBarStyleRootWindowProperties();
+//        // Enable title bar style
+//        rootWindow.getRootWindowProperties().addSuperObject(titleBarStyleProperties);
         //####### INICIO TESTES #######//
         /*/
          mainView.split(TabbedPaneView.HORIZONTAL, true);
@@ -137,7 +175,7 @@ public class MainUI implements Extensible {
         statusBar.add(statusLabel);
 
         window.getContentPane().add(statusBar, BorderLayout.SOUTH);
-        
+
         //finaliza
         window.pack();
     }
@@ -150,21 +188,38 @@ public class MainUI implements Extensible {
         //torna a janela visivel
         window.setVisible(true);
     }
-    
-    private void createActions(){
+
+    private void createActions() {
         createAndShowTerminal = new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 if (terminal == null) {
                     terminal = new MyJSConsole(ScriptEnvironment.getVariables(), ScriptEnvironment.getFunctions());
-                    Dimension screen = Toolkit.getDefaultToolkit().getScreenSize();
-                    Rectangle frame = terminal.getBounds();
-                    terminal.setLocation((screen.width - frame.width) / 2, (screen.height - frame.height) / 2);
                 }
-                terminal.setVisible(true);
+
+//                {
+//                    Dimension screen = Toolkit.getDefaultToolkit().getScreenSize();
+//                    Rectangle frame = terminal.getBounds();
+//                    terminal.setLocation((screen.width - frame.width) / 2, (screen.height - frame.height) / 2);
+//                    terminal.setVisible(true);
+//                }
+                {
+                    if (!terminal.getRootPane().isShowing()) {
+                        Dimension screen = Toolkit.getDefaultToolkit().getScreenSize();
+                        Rectangle frame = terminal.getBounds();
+                        // Floating windows are created via the root window
+                        FloatingWindow fw = rootWindow.createFloatingWindow(
+                                new Point((screen.width - frame.width) / 2, (screen.height - frame.height) / 2),
+                                null, //new Dimension(300, 200),
+                                new View(terminal.getTitle(), null, terminal.getRootPane())
+                        );
+                        // Show the window
+                        fw.getTopLevelAncestor().setVisible(true);
+                    }
+                }
             }
         };
-        
+
         createAndShowConfigurationWindow = new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -175,7 +230,7 @@ public class MainUI implements Extensible {
             }
         };
     }
-    
+
     private void addKeyBindings() {
         window.getRootPane().getActionMap().put("myAction", createAndShowTerminal);
         window.getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("control shift A"), "myAction");
@@ -191,6 +246,63 @@ public class MainUI implements Extensible {
         JMenuItem i = new JMenuItem("Terminal");
         i.addActionListener(createAndShowTerminal);
         return i;
+    }
+
+    private JMenu createThemesMenu() {
+        JMenu themesMenu = new JMenu("Themes");
+
+        final RootWindowProperties titleBarStyleProperties = PropertiesUtil.createTitleBarStyleRootWindowProperties();
+
+        final JCheckBoxMenuItem titleBarStyleItem = new JCheckBoxMenuItem("Title Bar Style Theme");
+        titleBarStyleItem.setSelected(false);
+        titleBarStyleItem.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                if (titleBarStyleItem.isSelected()) {
+                    properties.addSuperObject(titleBarStyleProperties);
+                } else {
+                    properties.removeSuperObject(titleBarStyleProperties);
+                }
+            }
+        });
+
+        themesMenu.add(titleBarStyleItem);
+        themesMenu.add(new JSeparator());
+
+        DockingWindowsTheme[] themes = {new DefaultDockingTheme(),
+            new LookAndFeelDockingTheme(),
+            new BlueHighlightDockingTheme(),
+            new SlimFlatDockingTheme(),
+            new GradientDockingTheme(),
+            new ShapedGradientDockingTheme(),
+            new SoftBlueIceDockingTheme(),
+            new ClassicDockingTheme()};
+
+        ButtonGroup group = new ButtonGroup();
+
+        for (int i = 0; i < themes.length; i++) {
+            final DockingWindowsTheme theme = themes[i];
+
+            JRadioButtonMenuItem item = new JRadioButtonMenuItem(theme.getName());
+            item.setSelected(i == 0);
+            group.add(item);
+
+            themesMenu.add(item).addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    // Clear the modified properties values
+                    properties.getMap().clear(true);
+
+                    setTheme(theme);
+                }
+            });
+        }
+
+        return themesMenu;
+    }
+
+    private void setTheme(DockingWindowsTheme theme) {
+        properties.replaceSuperObject(currentTheme.getRootWindowProperties(),
+                theme.getRootWindowProperties());
+        currentTheme = theme;
     }
 
     public static void setStatus() {
@@ -212,11 +324,25 @@ public class MainUI implements Extensible {
                     }
                 }
             }
+
+            InfoNodeLookAndFeel infoNodeLookAndFeel = new InfoNodeLookAndFeel();
+            //infoNodeLookAndFeel.getTheme().setDesktopColor(Color.red.darker());
+
+//            InfoNodeLookAndFeelTheme theme
+//                    = new InfoNodeLookAndFeelTheme("My Theme",
+//                            new Color(110, 120, 150),
+//                            new Color(0, 170, 0),
+//                            new Color(80, 80, 80),
+//                            Color.WHITE,
+//                            new Color(0, 170, 0),
+//                            Color.WHITE,
+//                            0.8);
+            UIManager.setLookAndFeel(infoNodeLookAndFeel);
         } catch (Exception ex) {
 
         }
 
-        EventQueue.invokeLater(new Runnable() {
+        SwingUtilities.invokeLater(new Runnable() {
             @Override
             public void run() {
                 MainUI ui = new MainUI();
@@ -239,6 +365,16 @@ public class MainUI implements Extensible {
                 + ((platformName == null) ? PluginManager.getText("s3f.frame.defaultplatformtitle") : platformName)
                 + ((platformVersion == null) ? "" : " | " + platformVersion) + " ]";
         window.setTitle(title);
+
+        //view menu
+        JMenu viewMenu = new JMenu(PluginManager.getText("s3f.viewmenu.name"));
+//        viewMenu.add();
+        menuBar.add(viewMenu);
+
+        //window menu
+        JMenu windowMenu = new JMenu(PluginManager.getText("s3f.windowmenu.name"));
+//        windowMenu.add();
+        menuBar.add(windowMenu);
 
         //load singleton and factories from :
         Data[] factoriesData = pm.getFactoriesData("s3f.guibuilder.*");
@@ -302,21 +438,53 @@ public class MainUI implements Extensible {
             };
             window.addComponentListener(componentListener);
 
+            ArrayList<DockingWindow> staticTabs = new ArrayList<>();
+            ArrayList<DockingWindow> dynamicTabs = new ArrayList<>();
+
             for (Tab o : builder.getTabs()) {
-                mainView.add(o);
+                View view = new View(
+                        (String) o.getData().getProperty(TabProperty.TITLE),
+                        (Icon) o.getData().getProperty(TabProperty.ICON),
+                        (Component) o.getData().getProperty(TabProperty.COMPONENT)
+                );
+
+                if (o.getData().getProperty(TabProperty.STATIC) != null) {
+                    staticTabs.add(view);
+                } else {
+                    dynamicTabs.add(view);
+                }
+
+                DockingUtil.addWindow(view, rootWindow);
             }
+
+            TabWindow staticTabWindow = new TabWindow(staticTabs.toArray(new DockingWindow[staticTabs.size()]));
+            staticTabWindow.getTabWindowProperties().getMaximizeButtonProperties().setVisible(false);
+            staticTabWindow.getTabWindowProperties().getUndockButtonProperties().setVisible(false);
+            staticTabWindow.getTabWindowProperties().getCloseButtonProperties().setVisible(false);
+            TabWindow dynamicTabWindow = new TabWindow(dynamicTabs.toArray(new DockingWindow[dynamicTabs.size()]));
+            dynamicTabWindow.getTabWindowProperties().getMaximizeButtonProperties().setVisible(false);
+            dynamicTabWindow.getTabWindowProperties().getUndockButtonProperties().setVisible(false);
+            dynamicTabWindow.getTabWindowProperties().getCloseButtonProperties().setVisible(false);
+
+            // Creating a window tree as layout
+            SplitWindow myLayout = new SplitWindow(true, 0.20f,
+                    staticTabWindow, dynamicTabWindow
+            );
+            // Set the layout
+            rootWindow.setWindow(myLayout);
         }
 
+        //s3f menu
         Object o = PluginManager.getPluginManager().getFactoryProperty("s3f", "hideS3Fmenu");
         boolean hideS3Fmenu = o != null && o instanceof Boolean && ((Boolean) o) == true;
         JMenu S3FMenu = new JMenu((hideS3Fmenu) ? "     " : PluginManager.getText("s3f.menu"));
         S3FMenu.add(getS3FPluginConfigurationMenuItem());
         S3FMenu.add(getS3FShellMenuItem());
+        S3FMenu.add(createThemesMenu());
         S3FMenu.addSeparator();
         JMenuItem i;
         i = new JMenuItem(PluginManager.getText("s3f.item.about"));
         S3FMenu.add(i);
-
         menuBar.add(S3FMenu);
 
         //testes

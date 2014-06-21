@@ -28,6 +28,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.PrintStream;
 import java.lang.reflect.Field;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -267,22 +268,25 @@ public class PluginManager {
         }
 
         for (Entry<String, String> e : scripts.entrySet()) {
-            try {
-                Invocable runScript = ScriptManager.runScript(e.getValue(), e.getKey().substring(e.getKey().lastIndexOf('.') + 1), null);
-                ScriptManager.createDrawingFrame(runScript, 10);
-            } catch (ScriptException ex) {
-                ex.printStackTrace();
-            }
+//            try {
+//                Invocable runScript = ScriptManager.runScript(e.getValue(), e.getKey().substring(e.getKey().lastIndexOf('.') + 1), null);
+//                ScriptManager.createDrawingFrame(runScript, 10);
+//            } catch (ScriptException ex) {
+//                ex.printStackTrace();
+//            }
         }
         System.gc();
     }
 
-    @Deprecated
-    public void PRINT_TEST() {
-        System.out.println("factoryTreeRoot:");
-        factoryTreeRoot.printTree();
-        System.out.println("entityTreeRoot:");
-        entityTreeRoot.printTree();
+    /**
+     * Exibe as arvores
+     * @param out 
+     */
+    public void printTree(PrintStream out) {
+        out.println("Factory Tree:");
+        factoryTreeRoot.printTree(out);
+        out.println("Entity Tree:");
+        entityTreeRoot.printTree(out);
     }
 
     /**

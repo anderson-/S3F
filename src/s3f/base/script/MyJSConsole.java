@@ -10,16 +10,11 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.InputStream;
-import java.io.PipedInputStream;
 import java.io.PrintStream;
-import java.io.UnsupportedEncodingException;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.swing.ButtonGroup;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
@@ -31,23 +26,16 @@ import javax.swing.JRadioButtonMenuItem;
 import javax.swing.JScrollPane;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
-import javax.swing.text.Document;
-import javax.swing.text.Segment;
-import org.mozilla.javascript.Context;
-import org.mozilla.javascript.Function;
-import org.mozilla.javascript.Scriptable;
 import org.mozilla.javascript.ScriptableObject;
 import org.mozilla.javascript.SecurityUtilities;
-import org.mozilla.javascript.tools.shell.ConsoleTextArea;
 import org.mozilla.javascript.tools.shell.Global;
 import org.mozilla.javascript.tools.shell.Main;
-import s3f.base.plugin.PluginManager;
 
 public class MyJSConsole extends JFrame implements ActionListener {
 
     private File CWD;
     private JFileChooser dlg;
-    private ConsoleTextArea consoleTextArea;
+    private MyConsoleTextArea consoleTextArea;
     private String[] args = new String[]{};
     private final InputStream stdIn = System.in;
     private final PrintStream stdOut = System.out;
@@ -103,8 +91,7 @@ public class MyJSConsole extends JFrame implements ActionListener {
         consoleTextArea = new MyConsoleTextArea(args);
         JScrollPane scroller = new JScrollPane(consoleTextArea);
         setContentPane(scroller);
-        int changeMe = 14;
-        consoleTextArea.setFont(new Font("Monospaced", Font.PLAIN, changeMe));
+        consoleTextArea.setFont(new Font("Monospaced", Font.PLAIN, 12));
 
         consoleTextArea.setRows(24);
         consoleTextArea.setColumns(80);
@@ -129,14 +116,28 @@ public class MyJSConsole extends JFrame implements ActionListener {
         consoleTextArea.getOut().append("\n");
         //consoleTextArea.getOut().append("Toda a saída de texto padrão será redirecionada para este terminal durante a seção\n");
 
+        consoleTextArea.getPreprocessors().add(new Preprocessor() {
+            @Override
+            public String preprocessCommand(String cmd) {
+                switch (cmd) {
+                    case "tree":
+                        return "tree();";
+                    case "cd ..":
+                        return "function x(){print(\"Anderson :DDD\");};x();";
+                }
+                return null;
+            }
+        });
+        consoleTextArea.enablePreprocessors(true);
+
         Main.setIn(consoleTextArea.getIn());
         Main.setOut(consoleTextArea.getOut());
         Main.setErr(consoleTextArea.getErr());
 
         //consoleTextArea.eval("pluginManager.PRINT_TEST();");
         Global global = Main.getGlobal();
-        global.getPrompts(null)[0] = "js>";
-        global.getPrompts(null)[1] = ">";
+//        global.getPrompts(null)[0] = "js>";
+//        global.getPrompts(null)[1] = ">";
 
         if (vars != null) {
             for (Entry<String, Object> var : vars.entrySet()) {
