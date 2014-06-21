@@ -23,13 +23,13 @@ package s3f.base.project;
 
 import java.io.File;
 
-public class Parser {
+public class FileParser {
 
-    void tryEncode(File file) throws Exception {
+    public void tryEncode(File file) throws Exception {
 
     }
 
-    void tryDecode(File file) throws Exception {
+    public void tryDecode(File file) throws Exception {
 
     }
 

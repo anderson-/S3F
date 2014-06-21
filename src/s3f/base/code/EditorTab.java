@@ -1,5 +1,5 @@
 /**
- * FileProperty.java
+ * EditorTab.java
  *
  * Copyright (C) 2014
  *
@@ -19,21 +19,24 @@
  * You should have received a copy of the GNU General Public License along with
  * S3F. If not, see http://www.gnu.org/licenses/.
  */
-package s3f.base.project;
+package s3f.base.code;
 
-import s3f.base.plugin.Data;
+import s3f.base.ui.tab.Tab;
 
-public final class FileProperty {
+public abstract class EditorTab implements Tab {
 
-    public static final String SAVE = "save";
-
-    private FileProperty() {
-
+    public EditorTab(){
+        
     }
 
-    public static void put(Data data, boolean save, String dir, String fileExtension, FileParser parser) {
-        data.setProperty(FileProperty.SAVE, save);
-        //...
+    @Override
+    public void update() {
+        
+    }
+
+    @Override
+    public void selected() {
+        
     }
 
 }

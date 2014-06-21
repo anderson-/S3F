@@ -5,10 +5,7 @@
  */
 package s3f.base.ui.tab;
 
-import java.awt.Component;
 import java.util.ArrayList;
-import javax.swing.Icon;
-import javax.swing.JButton;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.UIManager;
@@ -22,16 +19,6 @@ import s3f.base.plugin.Plugabble;
  * @author antunes2
  */
 public class MessageTab implements Tab {
-
-    @Override
-    public void init() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public Plugabble createInstance() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
 
     private static class TMPData {//mensagem
 

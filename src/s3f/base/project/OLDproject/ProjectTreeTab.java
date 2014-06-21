@@ -83,16 +83,6 @@ public class ProjectTreeTab implements Tab {
         return data;
     }
 
-    @Override
-    public void init() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public Plugabble createInstance() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
     class FeeRenderer extends DefaultTreeCellRenderer {
 
         @Override

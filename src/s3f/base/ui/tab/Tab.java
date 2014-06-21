@@ -5,17 +5,13 @@
  */
 package s3f.base.ui.tab;
 
-import java.awt.Component;
-import java.awt.Graphics;
-import javax.swing.Icon;
-import javax.swing.JTabbedPane;
-import s3f.base.plugin.Plugabble;
+import s3f.base.plugin.Configurable;
 
 /**
  *
  * @author Anderson
  */
-public interface Tab extends Plugabble {
+public interface Tab extends Configurable {
   
 
     /*
