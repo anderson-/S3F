@@ -36,6 +36,7 @@ import org.fife.ui.rsyntaxtextarea.TokenMakerFactory;
 import org.fife.ui.rsyntaxtextarea.TokenMap;
 import org.fife.ui.rtextarea.RTextScrollPane;
 import s3f.base.plugin.Data;
+import s3f.base.plugin.Plugabble;
 import s3f.base.plugin.PluginManager;
 import s3f.base.ui.tab.TabProperty;
 
@@ -58,6 +59,10 @@ public class CodeEditorTab extends EditorTab {
     //private static final ArrayList<Class> functionTokenClass = new ArrayList<>();
     //private static final ArrayList<FunctionToken> functionTokenInstances = new ArrayList<>();
 
+    private CodeEditorTab() {
+        this("plain");
+    }
+
     /**
      *
      * @param lang "plain", "javascript" ou "c"...
@@ -65,7 +70,7 @@ public class CodeEditorTab extends EditorTab {
     public CodeEditorTab(String lang) {
         textArea = new RSyntaxTextArea(20, 60);
         textArea.setCodeFoldingEnabled(true);
-        textArea.setSyntaxEditingStyle("text/" + lang);
+        setLanguage(lang);
 
         Color cstring = Color.decode("#f07818");
         Color cfunction = Color.decode("#6a4a3c");
@@ -100,6 +105,10 @@ public class CodeEditorTab extends EditorTab {
 
         data = new Data("editorTab", "s3f.base.code", "Editor Tab");
         TabProperty.put(data, "Editor", null, "Editor de código", new RTextScrollPane(textArea));
+    }
+
+    public final void setLanguage(String lang) {
+        textArea.setSyntaxEditingStyle("text/" + lang);
     }
 
     @Override
@@ -231,4 +240,13 @@ public class CodeEditorTab extends EditorTab {
 //        }
 //        return completionProvider;
 //    }
+    @Override
+    public void init() {
+
+    }
+
+    @Override
+    public Plugabble createInstance() {
+        return new CodeEditorTab();
+    }
 }

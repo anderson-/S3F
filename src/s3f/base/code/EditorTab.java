@@ -21,9 +21,10 @@
  */
 package s3f.base.code;
 
+import s3f.base.plugin.Plugabble;
 import s3f.base.ui.tab.Tab;
 
-public abstract class EditorTab implements Tab {
+public abstract class EditorTab implements Tab, Plugabble {
 
     public EditorTab(){
         

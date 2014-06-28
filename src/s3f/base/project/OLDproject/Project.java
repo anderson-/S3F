@@ -29,7 +29,7 @@ public class Project {
     public static final String FILE_EXTENSION = "proj";
     private final ArrayList<Element> elements = new ArrayList<>();
     private final ArrayList<CategoryData> categories = new ArrayList<>();
-    private final String name;
+    private String name;
 //    private final ArrayList<Program> programs = new ArrayList<>();
     //private final Interpreter interpreter;
 
@@ -40,6 +40,10 @@ public class Project {
 
     public String getName() {
         return name;
+    }
+
+    public void getName(String name) {
+        this.name = name;
     }
 
     public void addElement(Element element) {
@@ -201,7 +205,7 @@ public class Project {
     }
 
     public void importFile(String path) {
-//        importZip(path, functions);
+        importZip(path);
     }
 
     private void importZip(String path) {
@@ -219,7 +223,7 @@ public class Project {
                     if (entry.getName().startsWith(category.getName() + "/")
                             && entry.getName().endsWith(category.getExtension())) {
                         Element element = category.getStaticInstance().load(stream);
-                        if (element != null){
+                        if (element != null) {
                             addElement(element);
                         }
                         break;
@@ -231,10 +235,10 @@ public class Project {
             ex.printStackTrace();
         }
     }
-//    public static robotinterface.project.Project load(String path) {
-//        robotinterface.project.Project p = new robotinterface.project.Project();
-//        importZip(path, p.functions);
-//
-//        return p;
-//    }
+
+    public static Project load(String path) {
+        Project p = new Project("nil");
+        p.importFile(path);
+        return p;
+    }
 }

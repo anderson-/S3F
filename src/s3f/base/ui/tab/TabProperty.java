@@ -19,7 +19,6 @@ public final class TabProperty {
     public static String TOOL_TIP = "toolTip";
     public static String COMPONENT = "component";
     public static String TAB_COMPONENT = "tabComponent";
-    public static String STATIC = "static";
     
     private TabProperty(){
         

@@ -24,7 +24,7 @@ import s3f.base.ui.tab.Tab;
  */
 public abstract class GUIBuilder implements Plugabble {
 
-    private final Data data;
+    public final Data data;
     private ResourceBundle bundle;
 
     public static class Element<T> implements Comparable<Element> {

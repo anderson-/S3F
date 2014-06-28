@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project-private xmlns="http://www.netbeans.org/ns/project-private/1">
-    <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="3">
+    <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="4">
         <file>
             <url>src/s3f/base/script/MyConsoleTextArea.java</url>
             <bookmark id="3">
@@ -14,14 +14,31 @@
                 <key/>
             </bookmark>
         </file>
+        <file>
+            <url>src/s3f/base/script/MyJSConsole.java</url>
+            <bookmark id="4">
+                <name/>
+                <line>190</line>
+                <key/>
+            </bookmark>
+        </file>
     </editor-bookmarks>
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
         <group>
+            <file>file:/home/antunes/NetBeansProjects/S3F/src/s3f/base/project/OLDproject/ProjectTreeTab.java</file>
             <file>file:/home/antunes/NetBeansProjects/S3F/src/s3f/base/ui/tab/TabProperty.java</file>
+            <file>file:/home/antunes/NetBeansProjects/S3F/src/s3f/util/RandomColor.java</file>
             <file>file:/home/antunes/NetBeansProjects/S3F/src/s3f/base/ui/tab/Tab.java</file>
-            <file>file:/home/antunes/NetBeansProjects/S3F/src/s3f/base/project/OLDproject/FileCreator.java</file>
-            <file>file:/home/antunes/NetBeansProjects/S3F/src/s3f/base/project/OLDproject/Project.java</file>
             <file>file:/home/antunes/NetBeansProjects/S3F/src/s3f/base/ui/MainUI.java</file>
+            <file>file:/home/antunes/NetBeansProjects/S3F/src/s3f/util/SplashScreen.java</file>
+            <file>file:/home/antunes/NetBeansProjects/S3F/src/s3f/base/plugin/Configurable.java</file>
+            <file>file:/home/antunes/NetBeansProjects/S3F/src/s3f/base/plugin/PluginManager.java</file>
+            <file>file:/home/antunes/NetBeansProjects/S3F/src/s3f/base/ui/GUIBuilder.java</file>
+            <file>file:/home/antunes/NetBeansProjects/S3F/src/s3f/base/project/OLDproject/Project.java</file>
+            <file>file:/home/antunes/NetBeansProjects/S3F/src/s3f/base/plugin/Module.java</file>
+            <file>file:/home/antunes/NetBeansProjects/S3F/src/s3f/base/plugin/Extensible.java</file>
+            <file>file:/home/antunes/NetBeansProjects/S3F/src/s3f/base/plugin/EntityManager.java</file>
+            <file>file:/home/antunes/NetBeansProjects/S3F/src/s3f/base/project/OLDproject/Element.java</file>
         </group>
     </open-files>
 </project-private>

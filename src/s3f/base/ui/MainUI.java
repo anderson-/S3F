@@ -25,20 +25,28 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
-import java.awt.EventQueue;
 import java.awt.FlowLayout;
+import java.awt.Insets;
 import java.awt.Point;
+import java.awt.PopupMenu;
 import java.awt.Rectangle;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.util.ArrayList;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.AbstractAction;
+import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
 import javax.swing.Icon;
+import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
@@ -47,10 +55,15 @@ import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
 import javax.swing.JRadioButtonMenuItem;
+import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
+import javax.swing.JTextArea;
 import javax.swing.JToolBar;
 import javax.swing.KeyStroke;
+import javax.swing.LookAndFeel;
+import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.WindowConstants;
@@ -71,21 +84,23 @@ import net.infonode.docking.theme.LookAndFeelDockingTheme;
 import net.infonode.docking.theme.ShapedGradientDockingTheme;
 import net.infonode.docking.theme.SlimFlatDockingTheme;
 import net.infonode.docking.theme.SoftBlueIceDockingTheme;
-import net.infonode.docking.util.DockingUtil;
 import net.infonode.docking.util.PropertiesUtil;
-import net.infonode.docking.util.ViewMap;
 import net.infonode.gui.laf.InfoNodeLookAndFeel;
-import net.infonode.gui.laf.InfoNodeLookAndFeelTheme;
+import s3f.base.plugin.Configurable;
 import s3f.base.plugin.Data;
 import s3f.base.plugin.Extensible;
 import s3f.base.plugin.PluginManager;
+import s3f.base.project.OLDproject.ProjectTreeTab;
 import s3f.base.script.MyJSConsole;
 import s3f.base.script.ScriptEnvironment;
 import s3f.base.ui.tab.Tab;
 import s3f.base.ui.tab.TabProperty;
+import s3f.util.RandomColor;
 import s3f.util.SplashScreen;
 
 public class MainUI implements Extensible {
+
+    private static MainUI MAIN_UI;
 
     private JFrame window;
     private JMenuBar menuBar;
@@ -102,11 +117,22 @@ public class MainUI implements Extensible {
     //actions
     private AbstractAction createAndShowTerminal;
     private AbstractAction createAndShowConfigurationWindow;
+    private TabWindow firstTabWindow;
+    private TabWindow secondTabWindow;
+    private TabWindow thirdTabWindow;
+    private JCheckBox helpCheckBox;
 
     private MainUI() {
         createUI();
         createActions();
         addKeyBindings();
+    }
+
+    public static MainUI getInstance() {
+        if (MAIN_UI == null) {
+            MAIN_UI = new MainUI();
+        }
+        return MAIN_UI;
     }
 
     private void createUI() {
@@ -129,10 +155,15 @@ public class MainUI implements Extensible {
         //menu bar
         window.setJMenuBar(menuBar);
 
-        //toolBar
+        //toolbar
         toolBarPanel = new JPanel();
         toolBarPanel.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
         window.getContentPane().add(toolBarPanel, BorderLayout.NORTH);
+
+        //deafult toolbar buttons
+        toolBarPanel.add(addTip(createToolbarButton(null, "", "/resources/tango/32x32/actions/document-new.png"), "dica :DDD"));
+        toolBarPanel.add(addTip(createToolbarButton(null, "", "/resources/tango/32x32/actions/document-open.png"), "dica :DDD"));
+        toolBarPanel.add(addTip(createToolbarButton(null, "", "/resources/tango/32x32/devices/media-floppy.png"), "dica :DDD"));
 
         //mainPanel
         mainPanel = new JPanel();
@@ -148,29 +179,134 @@ public class MainUI implements Extensible {
         rootWindow.addTabMouseButtonListener(DockingWindowActionMouseButtonListener.MIDDLE_BUTTON_CLOSE_LISTENER);
         mainPanel.add(rootWindow);
 
-//        RootWindowProperties titleBarStyleProperties = PropertiesUtil.createTitleBarStyleRootWindowProperties();
-//        // Enable title bar style
-//        rootWindow.getRootWindowProperties().addSuperObject(titleBarStyleProperties);
-        //####### INICIO TESTES #######//
-        /*/
-         mainView.split(TabbedPaneView.HORIZONTAL, true);
-         Project project = new Project("Projeto X");
+        //ProjectTree & Console
+        ProjectTreeTab projectTreeTab = new ProjectTreeTab("Empty");
+        View projectTreeView = new View(
+                (String) projectTreeTab.getData().getProperty(TabProperty.TITLE),
+                (Icon) projectTreeTab.getData().getProperty(TabProperty.ICON),
+                (Component) projectTreeTab.getData().getProperty(TabProperty.COMPONENT)
+        );
 
-         for (int i = 0; i < 10; i++) {
-         project.addElement(new TESTE.TMPElement("asdl", UIManager.getIcon("FileView.fileIcon")));
-         }
+        final JTextArea console = new JTextArea();
+        console.setEditable(false);
+        JPopupMenu popupMenu = new JPopupMenu();
+        console.setComponentPopupMenu(popupMenu);
+        JMenuItem menuItem = new JMenuItem("Limpar");
+        menuItem.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                console.setText("");
+            }
+        });
+        popupMenu.add(menuItem);
+        secondTabWindow = new TabWindow();
+        //secondTabWindow.getTabWindowProperties().getTabbedPanelProperties().setTabAreaOrientation(Direction.LEFT);
+        secondTabWindow.addTab(projectTreeView);
+        View consoleView = new View("Console", null, new JScrollPane(console));
+        thirdTabWindow = new TabWindow();
+        thirdTabWindow.addTab(consoleView);
 
-         mainView.add(new ProjectTreeTab(project));
-         mainView.add(new s3f.base.ui.tab.MessageTab());
-         addTabs(mainView);
-         addTabs(mainView.get(TabbedPaneView.SECOND));
-         /*/
-        //######## FIM TESTES ########//
+        SplitWindow leftSplitWindow = new SplitWindow(false, .5f, secondTabWindow, thirdTabWindow);
+
+        firstTabWindow = new TabWindow();
+        SplitWindow firstSplitWindow = new SplitWindow(true, .2f, leftSplitWindow, firstTabWindow);
+        rootWindow.setWindow(firstSplitWindow);
+
+        lockView(firstTabWindow);
+        lockView(secondTabWindow);
+        lockView(thirdTabWindow);
+
+        //teste desenhar com outro tema
+//        final Random r = new Random();
+//        new Thread() {
+//            @Override
+//            public void run() {
+//                try {
+//                    Thread.sleep(1000);
+//                } catch (InterruptedException ex) {
+//                }
+//                for (int i = 0; i < 5; i++) {
+//
+//                    try {
+//                        Thread.sleep(100);
+//                    } catch (InterruptedException ex) {
+//                    }
+//                    SwingUtilities.invokeLater(new Runnable() {
+//
+//                        @Override
+//                        public void run() {
+//                            try {
+//                                final LookAndFeel lookAndFeel = UIManager.getLookAndFeel();
+//                                InfoNodeLookAndFeelTheme theme
+//                                        = new InfoNodeLookAndFeelTheme("My Theme",
+//                                                new Color(r.nextInt(255), r.nextInt(255), r.nextInt(255)),
+//                                                new Color(0, 170, r.nextInt(255)),
+//                                                new Color(80, r.nextInt(255), 80),
+//                                                Color.WHITE,
+//                                                new Color(0, r.nextInt(255), r.nextInt(255)),
+//                                                Color.WHITE,
+//                                                0.8);
+//                                UIManager.setLookAndFeel(new InfoNodeLookAndFeel(theme));
+//
+////                    SwingUtilities.invokeLater(new Runnable() {
+////                        @Override
+////                        public void run() {
+//                                final BufferedImage bi = new BufferedImage(500, 500, BufferedImage.TYPE_INT_RGB);
+//
+//                                SwingUtilities.updateComponentTreeUI(window);
+//                                firstTabWindow.setVisible(false);
+//                                window.printAll(bi.getGraphics());
+//
+//                                JPanel p = new JPanel() {
+//                                    @Override
+//                                    public void paintComponent(Graphics g) {
+//                                        g.drawImage(bi, 0, 0, null);
+//                                    }
+//                                };
+//                                firstTabWindow.setVisible(true);
+//                                firstTabWindow.addTab(new View("asd", null, p));
+//
+////                            SwingUtilities.invokeLater(new Runnable() {
+////                                @Override
+////                                public void run() {
+//                                try {
+//                                    UIManager.setLookAndFeel(lookAndFeel);
+//                                    SwingUtilities.updateComponentTreeUI(window);
+//                                } catch (UnsupportedLookAndFeelException ex) {
+//
+//                                }
+////                                }
+////                            });
+////                        }
+////                    });
+//                            } catch (UnsupportedLookAndFeelException ex) {
+//
+//                            }
+//                        }
+//                    });
+//                }
+//            }
+//        }.start();
         //statusBar
         statusBar = new JToolBar();
         statusLabel = new JLabel();
         statusBar.setFloatable(false);
         statusBar.setRollover(true);
+        helpCheckBox = new JCheckBox();
+        helpCheckBox.setSelected(true);
+        helpCheckBox.setToolTipText("Selecione para dicas");
+        helpCheckBox.setFocusable(false);
+        helpCheckBox.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                if (!helpCheckBox.isSelected()) {
+                    statusLabel.setText(PluginManager.getText("s3f.statusbar.welcome"));
+                }
+            }
+        });
+        helpCheckBox.setBorder(null);
+        statusBar.add(helpCheckBox);
+        statusBar.add(Box.createHorizontalStrut(3));
+
         statusLabel.setText(PluginManager.getText("s3f.statusbar.welcome"));
         statusBar.add(statusLabel);
 
@@ -187,6 +323,75 @@ public class MainUI implements Extensible {
         window.setLocation((screen.width - frame.width) / 2, (screen.height - frame.height) / 2);
         //torna a janela visivel
         window.setVisible(true);
+    }
+
+    private JSeparator separator() {
+        JSeparator sep = new JSeparator(SwingConstants.VERTICAL);
+        sep.setPreferredSize(new Dimension(sep.getPreferredSize().width, 32));
+        return sep;
+    }
+
+    public static JComponent createToolbarButton(AbstractAction action, String tooltip, String iconPath) {
+        JButton button = new JButton();
+        button.setIcon(new javax.swing.ImageIcon(MainUI.class.getResource(iconPath)));
+        button.setToolTipText(tooltip);
+        button.setBorderPainted(false);
+        button.setMargin(new Insets(0, 0, 0, 0));
+        button.setFocusable(false);
+        //button.setText("text");
+        button.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
+        button.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
+        button.addActionListener(action);
+        return button;
+    }
+
+    public Component addTip(Component c, final String tip) {
+        c.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                printHelp(tip);
+            }
+        });
+        return c;
+    }
+
+    public void printHelp(String str) {
+        if (helpCheckBox.isSelected()) {
+            statusLabel.setText(str);
+        }
+    }
+
+    public void addView(int order, DockingWindow view) {
+        TabWindow tw;
+        switch (order) {
+            case 1:
+                tw = firstTabWindow;
+                break;
+            case 2:
+                tw = secondTabWindow;
+                break;
+            case 3:
+                tw = thirdTabWindow;
+                break;
+            default:
+                tw = firstTabWindow;
+        }
+        tw.addTab(view);
+    }
+
+    public void addView(int order, Configurable obj) {
+        View view = new View(
+                (String) obj.getData().getProperty(TabProperty.TITLE),
+                (Icon) obj.getData().getProperty(TabProperty.ICON),
+                (Component) obj.getData().getProperty(TabProperty.COMPONENT)
+        );
+        addView(order, view);
+    }
+
+    private void lockView(DockingWindow dw) {
+        dw.getWindowProperties().setMaximizeEnabled(false);
+        dw.getWindowProperties().setUndockEnabled(false);
+        dw.getWindowProperties().setCloseEnabled(false);
     }
 
     private void createActions() {
@@ -213,6 +418,7 @@ public class MainUI implements Extensible {
                                 null, //new Dimension(300, 200),
                                 new View(terminal.getTitle(), null, terminal.getRootPane())
                         );
+
                         // Show the window
                         fw.getTopLevelAncestor().setVisible(true);
                     }
@@ -230,6 +436,8 @@ public class MainUI implements Extensible {
             }
         };
     }
+
+    ;
 
     private void addKeyBindings() {
         window.getRootPane().getActionMap().put("myAction", createAndShowTerminal);
@@ -310,23 +518,21 @@ public class MainUI implements Extensible {
     }
 
     public static void buildAndRun() {
-        final SplashScreen splashScreen = new SplashScreen("/resources/jifi5.png");
+        final SplashScreen splashScreen = new SplashScreen("/resources/jifi5.png", true);
         splashScreen.splash();
         try {
-            String systemLookAndFeelClassName = UIManager.getSystemLookAndFeelClassName();
-            if (!systemLookAndFeelClassName.equals(UIManager.getCrossPlatformLookAndFeelClassName())) {
-                UIManager.setLookAndFeel(systemLookAndFeelClassName);
-            } else {
-                for (UIManager.LookAndFeelInfo info : UIManager.getInstalledLookAndFeels()) {
-                    if ("Nimbus".equals(info.getName())) {
-                        UIManager.setLookAndFeel(info.getClassName());
-                        break;
-                    }
-                }
-            }
-
-            InfoNodeLookAndFeel infoNodeLookAndFeel = new InfoNodeLookAndFeel();
-            //infoNodeLookAndFeel.getTheme().setDesktopColor(Color.red.darker());
+//            String systemLookAndFeelClassName = UIManager.getSystemLookAndFeelClassName();
+//            if (!systemLookAndFeelClassName.equals(UIManager.getCrossPlatformLookAndFeelClassName())) {
+//                UIManager.setLookAndFeel(systemLookAndFeelClassName);
+//            } else {
+//                for (UIManager.LookAndFeelInfo info : UIManager.getInstalledLookAndFeels()) {
+//                    if ("Nimbus".equals(info.getName())) {
+//                        UIManager.setLookAndFeel(info.getClassName());
+//                        break;
+//                    }
+//                }
+//            }
+            UIManager.setLookAndFeel(createLookAndFeel(RandomColor.generate(.3f, .8f)));
 
 //            InfoNodeLookAndFeelTheme theme
 //                    = new InfoNodeLookAndFeelTheme("My Theme",
@@ -337,7 +543,8 @@ public class MainUI implements Extensible {
 //                            new Color(0, 170, 0),
 //                            Color.WHITE,
 //                            0.8);
-            UIManager.setLookAndFeel(infoNodeLookAndFeel);
+//            UIManager.setLookAndFeel(new InfoNodeLookAndFeel(theme));
+//            UIManager.setLookAndFeel(new InfoNodeLookAndFeel());
         } catch (Exception ex) {
 
         }
@@ -345,7 +552,7 @@ public class MainUI implements Extensible {
         SwingUtilities.invokeLater(new Runnable() {
             @Override
             public void run() {
-                MainUI ui = new MainUI();
+                MainUI ui = MainUI.getInstance();
                 ui.loadModulesFrom(PluginManager.getPluginManager());
                 ui.show();
                 splashScreen.dispose();
@@ -353,8 +560,16 @@ public class MainUI implements Extensible {
         });
     }
 
-    @Override
+    public static LookAndFeel createLookAndFeel(Color c) {
+        InfoNodeLookAndFeel infoNodeLookAndFeel = new InfoNodeLookAndFeel();
+        infoNodeLookAndFeel.getTheme().setDesktopColor(c);
+        infoNodeLookAndFeel.getTheme().setPrimaryControlColor(c);
+        infoNodeLookAndFeel.getTheme().setSelectedMenuBackgroundColor(c);
+        infoNodeLookAndFeel.getTheme().setSelectedTextBackgroundColor(c);
+        return infoNodeLookAndFeel;
+    }
 
+    @Override
     public void loadModulesFrom(PluginManager pm) {
 
         //pm.PRINT_TEST();
@@ -400,9 +615,19 @@ public class MainUI implements Extensible {
 
             int tmpWidth = 0;
 
-            for (Component o : builder.getToolbarComponents(true, 500)) {
-                toolBarPanel.add(o);
-                tmpWidth += o.getPreferredSize().width;
+            ArrayList<Component> toolbarComponents = builder.getToolbarComponents(true, 500);
+
+            if (!toolbarComponents.isEmpty()) {
+                toolBarPanel.add(separator());
+            }
+
+            for (Component c : toolBarPanel.getComponents()) {
+                tmpWidth += c.getPreferredSize().width;
+            }
+
+            for (Component c : toolbarComponents) {
+                toolBarPanel.add(c);
+                tmpWidth += c.getPreferredSize().width;
             }
 
             final JPanel p = new JPanel();
@@ -438,8 +663,7 @@ public class MainUI implements Extensible {
             };
             window.addComponentListener(componentListener);
 
-            ArrayList<DockingWindow> staticTabs = new ArrayList<>();
-            ArrayList<DockingWindow> dynamicTabs = new ArrayList<>();
+            ArrayList<DockingWindow> tabs = new ArrayList<>();
 
             for (Tab o : builder.getTabs()) {
                 View view = new View(
@@ -448,30 +672,12 @@ public class MainUI implements Extensible {
                         (Component) o.getData().getProperty(TabProperty.COMPONENT)
                 );
 
-                if (o.getData().getProperty(TabProperty.STATIC) != null) {
-                    staticTabs.add(view);
-                } else {
-                    dynamicTabs.add(view);
-                }
-
-                DockingUtil.addWindow(view, rootWindow);
+                tabs.add(view);
             }
 
-            TabWindow staticTabWindow = new TabWindow(staticTabs.toArray(new DockingWindow[staticTabs.size()]));
-            staticTabWindow.getTabWindowProperties().getMaximizeButtonProperties().setVisible(false);
-            staticTabWindow.getTabWindowProperties().getUndockButtonProperties().setVisible(false);
-            staticTabWindow.getTabWindowProperties().getCloseButtonProperties().setVisible(false);
-            TabWindow dynamicTabWindow = new TabWindow(dynamicTabs.toArray(new DockingWindow[dynamicTabs.size()]));
-            dynamicTabWindow.getTabWindowProperties().getMaximizeButtonProperties().setVisible(false);
-            dynamicTabWindow.getTabWindowProperties().getUndockButtonProperties().setVisible(false);
-            dynamicTabWindow.getTabWindowProperties().getCloseButtonProperties().setVisible(false);
-
-            // Creating a window tree as layout
-            SplitWindow myLayout = new SplitWindow(true, 0.20f,
-                    staticTabWindow, dynamicTabWindow
-            );
-            // Set the layout
-            rootWindow.setWindow(myLayout);
+            for (DockingWindow dw : tabs) {
+                addView(1, dw);
+            }
         }
 
         //s3f menu

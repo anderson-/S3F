@@ -1,5 +1,6 @@
 package s3f.util;
 
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Frame;
 import java.awt.Graphics;
@@ -27,6 +28,8 @@ import java.net.URL;
  */
 public final class SplashScreen extends Frame {
 
+    private final boolean animated;
+
     /**
      * Construct using an image for the splash screen.
      *
@@ -35,6 +38,10 @@ public final class SplashScreen extends Frame {
      * image.
      */
     public SplashScreen(String aImageId) {
+        this(aImageId, false);
+    }
+
+    public SplashScreen(String aImageId, boolean animated) {
         /* 
          * Implementation Note
          * Args.checkForContent is not called here, in an attempt to minimize 
@@ -44,6 +51,7 @@ public final class SplashScreen extends Frame {
             throw new IllegalArgumentException("Image Id does not have content.");
         }
         fImageId = aImageId;
+        this.animated = animated;
     }
 
     /**
@@ -67,7 +75,24 @@ public final class SplashScreen extends Frame {
             System.out.println("Cannot track image load.");
         }
 
-        SplashWindow splashWindow = new SplashWindow(this, fImage);
+        final SplashWindow splashWindow = new SplashWindow(this, fImage);
+
+        if (animated) {
+            new Thread() {
+                @Override
+                public void run() {
+                    while (splashWindow.isVisible()) {
+                        splashWindow.repaint();
+                        try {
+                            Thread.sleep(100);
+                        } catch (InterruptedException ex) {
+
+                        }
+                    }
+                    System.out.println("DONE");
+                }
+            }.start();
+        }
     }
     // PRIVATE//
     private final String fImageId;
@@ -106,13 +131,32 @@ public final class SplashScreen extends Frame {
             Dimension screen = Toolkit.getDefaultToolkit().getScreenSize();
             Rectangle window = getBounds();
             setLocation((screen.width - window.width) / 2, (screen.height - window.height) / 2);
+            setBackground(new Color(0, 0, 0, 0));
             setVisible(true);
         }
 
         @Override
-        public void paint(Graphics graphics) {
+        public void paint(Graphics g2) {
             if (fImage != null) {
-                graphics.drawImage(fImage, 0, 0, this);
+                g2.drawImage(fImage, 0, 0, this);
+                if (animated) {
+                    for (int i = 15; i >= 0; i--) {
+                        g2.setColor(RandomColor.generate(.6f, .9f));
+                        g2.fillRect(i * 15 + 10, getHeight() - 15, 15, 3);
+                    }
+
+//                    for (int i = 15; i >= 0; i--) {
+//                        g2.setColor(RandomColor.generate(.6f, .9f));
+//                        g2.fillRect(i * 15 + 10, 0, 15, getHeight());
+//                    }
+//                    for (int i = 15; i >= 0; i--) {
+//                        for (int j = 10; j >= 0; j--) {
+//                            g2.setColor(RandomColor.generate(.6f, .9f));
+//                            g2.fillRect(i * 30, j * 30, 30, 30);
+//                        }
+//                    }
+                    Toolkit.getDefaultToolkit().sync();
+                }
             }
         }
         private Image fImage;
