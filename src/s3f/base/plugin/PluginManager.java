@@ -34,21 +34,15 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.PropertyResourceBundle;
 import java.util.ResourceBundle;
 import java.util.TreeMap;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import javax.script.Invocable;
-import javax.script.ScriptException;
+import s3f.base.project.Element;
 import s3f.base.script.ScriptManager;
-import s3f.base.ui.GUIBuilder;
 import s3f.util.fommil.jni.JniNamer;
 import s3f.util.toml.impl.Toml;
 
@@ -56,7 +50,7 @@ public class PluginManager {
 
     private static PluginManager PLUGIN_MANAGER = null;
 
-    public static PluginManager getPluginManager() {
+    public static PluginManager getInstance() {
         if (PLUGIN_MANAGER == null) {
             PLUGIN_MANAGER = new PluginManager();
             PLUGIN_MANAGER.init();
@@ -65,11 +59,11 @@ public class PluginManager {
     }
 
     public static ResourceBundle getbundle() {
-        return getPluginManager().defaultBundle;
+        return getInstance().defaultBundle;
     }
 
     public static ResourceBundle getbundle(String pluginShortName) {
-        ResourceBundle bundle = getPluginManager().bundleMap.get(pluginShortName);
+        ResourceBundle bundle = getInstance().bundleMap.get(pluginShortName);
         if (bundle != null) {
             return bundle;
         } else {
@@ -82,7 +76,7 @@ public class PluginManager {
     }
 
     public static String getText(String pluginShortName, String key) {
-        ResourceBundle bundle = getPluginManager().bundleMap.get(pluginShortName);
+        ResourceBundle bundle = getInstance().bundleMap.get(pluginShortName);
         if (bundle != null) {
             return bundle.getString(key);
         }
@@ -104,10 +98,14 @@ public class PluginManager {
     private final ArrayList<PluginPOJO> pluginList;
     private final HashMap<String, ResourceBundle> bundleMap;
     private ResourceBundle defaultBundle;
+    private final EntityManager factoryManager;
+    private final EntityManager entityManager;
 
     private PluginManager() {
         factoryTreeRoot = new Data("s3f", "", "Factory Tree Root");
         entityTreeRoot = new Data("root", "", "Entity Tree Root");
+        factoryManager = new EntityManager(factoryTreeRoot);
+        entityManager = new EntityManager(entityTreeRoot);
         pluginList = new ArrayList<>();
         bundleMap = new HashMap<>();
         defaultBundle = ResourceBundle.getBundle("s3f.lang.lang", new Locale("pt", "BR"), this.getClass().getClassLoader());
@@ -190,7 +188,7 @@ public class PluginManager {
                             try {
                                 is = new FileInputStream(child);
                                 if (is != null) {
-                                    Data data = this.getFactoryData(child.getName().substring(0, child.getName().lastIndexOf('.')));
+                                    Data data = factoryManager.getData(child.getName().substring(0, child.getName().lastIndexOf('.')));
                                     if (data != null) {
                                         String cfg = convertInputStreamToString(is);
                                         Toml parser = Toml.parse(cfg);
@@ -280,7 +278,8 @@ public class PluginManager {
 
     /**
      * Exibe as arvores
-     * @param out 
+     *
+     * @param out
      */
     public void printTree(PrintStream out) {
         out.println("Factory Tree:");
@@ -295,6 +294,8 @@ public class PluginManager {
      * Uma instância é de base quando <code>parent = null</code>.
      *
      * @param newRootInstance
+     * @param path
+     * @return
      */
     public Plugabble registerRootInstance(Plugabble newRootInstance, String path) {
         addNode(path, newRootInstance.getData(), entityTreeRoot);
@@ -424,7 +425,7 @@ public class PluginManager {
              * something like OpenJDK Runtime Environment (build 1.6.0_0-b11), 
              * try installing the official Sun JDK and see if that works. */
             setLibraryPath(newPath);
-            System.loadLibrary("rxtxSerial");
+            System.loadLibrary(libName);//"rxtxSerial"
             return true;
         } catch (Error | Exception e) {
             try {
@@ -566,127 +567,49 @@ public class PluginManager {
         throw new Error();
     }
 
-//    public static String search(String path, Data tree, List<Data> result) {
-//        if (path == null || tree == null || result == null) {
-//            return null;
-//        }
-//        List<Data> children = tree.getChildren();
-//        if (path.startsWith(tree.getPath())) {
-//            if (path.equals(tree.getPath())) {
-//                result.add(tree);
-//                return null;
-//            } else if (children != null) {
-//                if (path.equals(tree.getPath() + ".*")) {
-//                    for (Data c : children) {
-//                        result.add(c);
-//                    }
-//                    return null;
-//                } else {
-//                    for (Data c : children) {
-//                        if (path.startsWith(c.getPath())) {
-//                            if (path.isEmpty()) {
-//                                result.add(c);
-//                                return null;
-//                            } else {
-//                                search(path, c, result);
-//                            }
-//                        }
-//                    }
-//                }
-//            }
-//        }
-//        return (result.isEmpty()) ? tree.getPath() : null;
-//    }
-    public Data getFactoryData() {
-        return factoryTreeRoot;
-    }
-
-    public Data getFactoryData(String path) {
-        ArrayList<Data> result = new ArrayList<>();
-        Data.search(path.split("\\."), result, factoryTreeRoot);
-        if (result.isEmpty()) {
-            System.out.println("IS NULL");
-            return null;
-        } else {
-            return result.get(0);
-        }
-    }
-
-    public Object getFactoryProperty(String path, String field) {
-        ArrayList<Data> result = new ArrayList<>();
-        Data.search(path.split("\\."), result, factoryTreeRoot);
-        if (result.isEmpty()) {
-            return null;
-        } else {
-            return result.get(0).getProperty(field);
-        }
-    }
-
-    public Data[] getFactoriesData(String path) {
-        ArrayList<Data> result = new ArrayList<>();
-        Data.search(path.split("\\."), result, factoryTreeRoot);
-        if (result.isEmpty()) {
-            return null;
-        } else {
-            Data[] resultArray = new Data[result.size()];
-            resultArray = result.toArray(resultArray);
-            return resultArray;
-        }
-    }
-
-    public Data[] getFactoriesData(String path, Class filter) {
-        ArrayList<Data> result = new ArrayList<>();
-        Data.search(path.split("\\."), result, factoryTreeRoot);
-        if (result.isEmpty()) {
-            return null;
-        } else {
-            Data[] resultArray = new Data[result.size()];
-            for (int i = 0; i < resultArray.length; i++) {
-                Data data = result.get(i);
-                resultArray[i] = (filter.isAssignableFrom(data.getReference().getClass())) ? data : null;
-            }
-            resultArray = result.toArray(resultArray);
-            return resultArray;
-        }
-    }
-
-    public Object[] getFactoriesProperty(String path, String field) {
-        ArrayList<Data> result = new ArrayList<>();
-        Data.search(path.split("\\."), result, factoryTreeRoot);
-        if (result.isEmpty()) {
-            return null;
-        } else {
-            Object[] propertyArray = new Object[result.size()];
-            for (int i = 0; i < propertyArray.length; i++) {
-                propertyArray[i] = result.get(i).getProperty(path);
-            }
-            return propertyArray;
-        }
-    }
-
+    /**
+     * Cria um gerenciador de instancias para um determinado modulo extensivel.
+     * O modulo é registrado e recebe alterações na arvore especificada, ele
+     * também pode utilizar a instancia de EntityManager para iterar sobre um
+     * determinado conjunto de elementos.
+     *
+     * @param user
+     * @return
+     */
     public EntityManager createEntityManager(Extensible user) {
-        throw new Error();
+        if (user != null) {
+            entityManager.addListener(user);
+            user.loadModulesFrom(entityManager);
+        }
+        return entityManager;
+    }
+
+    public EntityManager createFactoryManager(Extensible user) {
+        if (user != null) {
+            factoryManager.addListener(user);
+            user.loadModulesFrom(factoryManager);
+        }
+        return factoryManager;
     }
 
     public Plugabble createRootInstanceOf(String path) {
-        Data d = getFactoryData(path);
+        Data d = factoryManager.getData(path);
         if (d == null) {
             return null;
         }
-        Plugabble p = d.getReference();
-        return registerRootInstance(p.createInstance(), path);
+        if (d.getReference() instanceof Plugabble) {
+            Plugabble plugabble = (Plugabble) d.getReference();
+            return registerRootInstance(plugabble.createInstance(), path);
+        }
+        return null;
     }
 
-    private void addListener(Extensible listener) {
-
+    public void registerFactory(Configurable plugabble) {
+        addNode(plugabble.getData().getPath(), plugabble.getData(), factoryTreeRoot);
     }
 
-    private void removeListener(Extensible listener) {
-
-    }
-
-    private void notifyListeners() {
-
+    public void registerEntiry(Configurable plugabble) {
+        addNode(plugabble.getData().getPath(), plugabble.getData(), entityTreeRoot);
     }
 
 }

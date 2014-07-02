@@ -21,7 +21,7 @@ public class ScriptEnvironment {
 
     public static Map<String, Object> getVariables() {
         HashMap<String, Object> var = new HashMap<>();
-        var.put("pluginManager", PluginManager.getPluginManager());
+        var.put("pluginManager", PluginManager.getInstance());
 
         return var;
     }
@@ -36,7 +36,7 @@ public class ScriptEnvironment {
     }
 
     public static void tree(Context cx, Scriptable thisObj, Object[] args, Function funObj) {
-        PluginManager.getPluginManager().printTree(System.out);
+        PluginManager.getInstance().printTree(System.out);
     }
     
     public static void printHistory(Context cx, Scriptable thisObj, Object[] args, Function funObj) {

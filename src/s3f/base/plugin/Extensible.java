@@ -28,8 +28,8 @@ public interface Extensible {
     /**
      * chamado para recarregar os plugins também (update do listener)!.
      * 
-     * @param pm 
+     * @param em 
      */
-    public void loadModulesFrom (PluginManager pm);
+    public void loadModulesFrom (EntityManager em);
 }
 

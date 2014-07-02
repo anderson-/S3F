@@ -26,34 +26,37 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.Insets;
 import java.awt.Point;
-import java.awt.PopupMenu;
 import java.awt.Rectangle;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
+import java.awt.image.BufferedImage;
+import java.io.File;
 import java.util.ArrayList;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.List;
 import javax.swing.AbstractAction;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
 import javax.swing.Icon;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JComponent;
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JRadioButtonMenuItem;
@@ -67,8 +70,8 @@ import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.WindowConstants;
+import javax.swing.filechooser.FileFilter;
 import net.infonode.docking.DockingWindow;
-import net.infonode.docking.FloatingWindow;
 import net.infonode.docking.RootWindow;
 import net.infonode.docking.SplitWindow;
 import net.infonode.docking.TabWindow;
@@ -88,13 +91,17 @@ import net.infonode.docking.util.PropertiesUtil;
 import net.infonode.gui.laf.InfoNodeLookAndFeel;
 import s3f.base.plugin.Configurable;
 import s3f.base.plugin.Data;
+import s3f.base.plugin.EntityManager;
 import s3f.base.plugin.Extensible;
 import s3f.base.plugin.PluginManager;
-import s3f.base.project.OLDproject.ProjectTreeTab;
+import s3f.base.project.Project;
+import s3f.base.project.ProjectTreeTab;
 import s3f.base.script.MyJSConsole;
+import s3f.base.script.Script;
 import s3f.base.script.ScriptEnvironment;
 import s3f.base.ui.tab.Tab;
 import s3f.base.ui.tab.TabProperty;
+import s3f.util.ColorUtils;
 import s3f.util.RandomColor;
 import s3f.util.SplashScreen;
 
@@ -115,17 +122,24 @@ public class MainUI implements Extensible {
     private PluginConfigurationWindow pluginConfigurationWindow = null;
     private MyJSConsole terminal = null;
     //actions
+    private AbstractAction newDocument;
+    private AbstractAction newProject;
+    private AbstractAction openProject;
+    private AbstractAction saveProject;
     private AbstractAction createAndShowTerminal;
     private AbstractAction createAndShowConfigurationWindow;
     private TabWindow firstTabWindow;
     private TabWindow secondTabWindow;
     private TabWindow thirdTabWindow;
     private JCheckBox helpCheckBox;
+    private JFileChooser fileChooser;
+    private Project project;
 
     private MainUI() {
-        createUI();
         createActions();
+        createUI();
         addKeyBindings();
+        init();
     }
 
     public static MainUI getInstance() {
@@ -133,6 +147,147 @@ public class MainUI implements Extensible {
             MAIN_UI = new MainUI();
         }
         return MAIN_UI;
+    }
+
+    private void init() {
+        PluginManager pm = PluginManager.getInstance();
+        pm.createFactoryManager(this);
+        pm.registerFactory(Script.JS_SCRIPTS);
+    }
+
+    private void createActions() {
+        createAndShowTerminal = new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (terminal == null) {
+                    terminal = new MyJSConsole(ScriptEnvironment.getVariables(), ScriptEnvironment.getFunctions());
+                }
+
+//                {
+//                    Dimension screen = Toolkit.getDefaultToolkit().getScreenSize();
+//                    Rectangle frame = terminal.getBounds();
+//                    terminal.setLocation((screen.width - frame.width) / 2, (screen.height - frame.height) / 2);
+//                    terminal.setVisible(true);
+//                }
+                {
+                    if (!terminal.getRootPane().isShowing()) {
+                        Dimension screen = Toolkit.getDefaultToolkit().getScreenSize();
+                        Rectangle frame = terminal.getBounds();
+//                        // Floating windows are created via the root window
+//                        FloatingWindow fw = rootWindow.createFloatingWindow(
+//                                new Point((screen.width - frame.width) / 2, (screen.height - frame.height) / 2),
+//                                null, //new Dimension(300, 200),
+//                                new View(terminal.getTitle(), null, terminal.getRootPane())
+//                        );
+                        View view = new View(terminal.getTitle(), null, terminal.getRootPane());
+                        addView(1, view);
+                        view.undock(new Point((screen.width - frame.width) / 2, (screen.height - frame.height) / 2));
+
+                        // Show the window
+//                        fw.getTopLevelAncestor().setVisible(true);
+                    }
+                }
+            }
+        };
+
+        createAndShowConfigurationWindow = new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (pluginConfigurationWindow == null) {
+                    pluginConfigurationWindow = new PluginConfigurationWindow();
+                }
+                pluginConfigurationWindow.show(true);
+            }
+        };
+
+        newProject = new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+            }
+        };
+
+        FileFilter ff = new FileFilter() {
+            @Override
+            public boolean accept(File file) {
+                if (file.isDirectory()) {
+                    return true;
+                }
+
+                String extension = null;
+                String s = file.getName();
+                int i = s.lastIndexOf('.');
+
+                if (i > 0 && i < s.length() - 1) {
+                    extension = s.substring(i + 1).toLowerCase();
+                }
+
+                if (extension != null) {
+                    if (extension.equals(Project.FILE_EXTENSION)) {
+                        return true;
+                    } else {
+                        return false;
+                    }
+                }
+
+                return false;
+            }
+
+            @Override
+            public String getDescription() {
+                return "Projetos";
+            }
+        };
+        Boolean old = UIManager.getBoolean("FileChooser.readOnly");
+        UIManager.put("FileChooser.readOnly", Boolean.TRUE);
+        fileChooser = new JFileChooser();
+        UIManager.put("FileChooser.readOnly", old);
+        fileChooser.setAcceptAllFileFilterUsed(false);
+        fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+        fileChooser.setMultiSelectionEnabled(false);
+        fileChooser.addChoosableFileFilter(ff);
+
+        openProject = new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                int returnVal = fileChooser.showOpenDialog(window);
+
+                if (returnVal == JFileChooser.APPROVE_OPTION) {
+                    returnVal = JOptionPane.showConfirmDialog(window, "O projeto atual será fechado, deseja prosseguir?", "Abrir", JOptionPane.YES_NO_OPTION);
+
+                    if (returnVal != JOptionPane.YES_OPTION) {
+                        return;
+                    }
+                    File file = fileChooser.getSelectedFile();
+
+                    project.load(file.getAbsolutePath());
+                }
+            }
+        };
+
+        saveProject = new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                int returnVal = fileChooser.showSaveDialog(window);
+
+                if (returnVal == JFileChooser.APPROVE_OPTION) {
+                    File file = fileChooser.getSelectedFile();
+                    String filename = file.toString();
+                    if (!filename.endsWith("." + Project.FILE_EXTENSION)) {
+                        filename += "." + Project.FILE_EXTENSION;
+                    }
+                    file = new File(filename);
+
+                    if (file.exists()) {
+                        returnVal = JOptionPane.showConfirmDialog(window, "Deseja sobreescrever o arquivo?", "Salvar", JOptionPane.YES_NO_OPTION);
+                        if (returnVal != JOptionPane.YES_OPTION) {
+                            return;
+                        }
+                    }
+
+                    project.save(file.getAbsolutePath());
+                }
+            }
+        };
     }
 
     private void createUI() {
@@ -161,9 +316,10 @@ public class MainUI implements Extensible {
         window.getContentPane().add(toolBarPanel, BorderLayout.NORTH);
 
         //deafult toolbar buttons
-        toolBarPanel.add(addTip(createToolbarButton(null, "", "/resources/tango/32x32/actions/document-new.png"), "dica :DDD"));
-        toolBarPanel.add(addTip(createToolbarButton(null, "", "/resources/tango/32x32/actions/document-open.png"), "dica :DDD"));
-        toolBarPanel.add(addTip(createToolbarButton(null, "", "/resources/tango/32x32/devices/media-floppy.png"), "dica :DDD"));
+        toolBarPanel.add(addTip(createToolbarButton(newDocument, "ashdas\nadadsy\niasdaus", "/resources/icons/fugue-24/document-new.png"), "dica :DDD"));
+        toolBarPanel.add(addTip(createToolbarButton(newProject, "aa", "/resources/icons/fugue-24/box-new.png"), "dica :DDD"));
+        toolBarPanel.add(addTip(createToolbarButton(openProject, "ss", "/resources/icons/fugue-24/folder-box.png"), "dica :DDD"));
+        toolBarPanel.add(addTip(createToolbarButton(saveProject, "ss", "/resources/icons/fugue-24/disk-black.png"), "dica :DDD"));
 
         //mainPanel
         mainPanel = new JPanel();
@@ -180,7 +336,8 @@ public class MainUI implements Extensible {
         mainPanel.add(rootWindow);
 
         //ProjectTree & Console
-        ProjectTreeTab projectTreeTab = new ProjectTreeTab("Empty");
+        project = new Project("Projeto");
+        ProjectTreeTab projectTreeTab = new ProjectTreeTab(project);
         View projectTreeView = new View(
                 (String) projectTreeTab.getData().getProperty(TabProperty.TITLE),
                 (Icon) projectTreeTab.getData().getProperty(TabProperty.ICON),
@@ -331,12 +488,30 @@ public class MainUI implements Extensible {
         return sep;
     }
 
+    /**
+     * Cria um botão padrão para a barra de ferramentas. O botão padrão possui
+     * uma ação, uma dica, que pode conter o caractere <code>"\n"</code> e um
+     * icone, que será destacado quando o mouse estiver sobre o componente.
+     *
+     * @param action
+     * @param tooltip
+     * @param iconPath
+     * @return
+     */
     public static JComponent createToolbarButton(AbstractAction action, String tooltip, String iconPath) {
         JButton button = new JButton();
-        button.setIcon(new javax.swing.ImageIcon(MainUI.class.getResource(iconPath)));
-        button.setToolTipText(tooltip);
+        ImageIcon icon = new ImageIcon(MainUI.class.getResource(iconPath));
+        button.setIcon(icon);
+        button.setRolloverEnabled(true);
+        button.setRolloverIcon(new ImageIcon(ColorUtils.imageHSBAchange(icon.getImage(), 0, 0, .1f, 0)));
+        if (!tooltip.isEmpty()) {
+            if (tooltip.contains("\n")) {
+                tooltip = "<html>" + tooltip.replace("\n", "<p>") + "</html>";
+            }
+            button.setToolTipText(tooltip);
+        }
         button.setBorderPainted(false);
-        button.setMargin(new Insets(0, 0, 0, 0));
+        button.setMargin(new Insets(5, 5, 5, 5));
         button.setFocusable(false);
         //button.setText("text");
         button.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
@@ -393,51 +568,6 @@ public class MainUI implements Extensible {
         dw.getWindowProperties().setUndockEnabled(false);
         dw.getWindowProperties().setCloseEnabled(false);
     }
-
-    private void createActions() {
-        createAndShowTerminal = new AbstractAction() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                if (terminal == null) {
-                    terminal = new MyJSConsole(ScriptEnvironment.getVariables(), ScriptEnvironment.getFunctions());
-                }
-
-//                {
-//                    Dimension screen = Toolkit.getDefaultToolkit().getScreenSize();
-//                    Rectangle frame = terminal.getBounds();
-//                    terminal.setLocation((screen.width - frame.width) / 2, (screen.height - frame.height) / 2);
-//                    terminal.setVisible(true);
-//                }
-                {
-                    if (!terminal.getRootPane().isShowing()) {
-                        Dimension screen = Toolkit.getDefaultToolkit().getScreenSize();
-                        Rectangle frame = terminal.getBounds();
-                        // Floating windows are created via the root window
-                        FloatingWindow fw = rootWindow.createFloatingWindow(
-                                new Point((screen.width - frame.width) / 2, (screen.height - frame.height) / 2),
-                                null, //new Dimension(300, 200),
-                                new View(terminal.getTitle(), null, terminal.getRootPane())
-                        );
-
-                        // Show the window
-                        fw.getTopLevelAncestor().setVisible(true);
-                    }
-                }
-            }
-        };
-
-        createAndShowConfigurationWindow = new AbstractAction() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                if (pluginConfigurationWindow == null) {
-                    pluginConfigurationWindow = new PluginConfigurationWindow();
-                }
-                pluginConfigurationWindow.show(true);
-            }
-        };
-    }
-
-    ;
 
     private void addKeyBindings() {
         window.getRootPane().getActionMap().put("myAction", createAndShowTerminal);
@@ -518,7 +648,7 @@ public class MainUI implements Extensible {
     }
 
     public static void buildAndRun() {
-        final SplashScreen splashScreen = new SplashScreen("/resources/jifi5.png", true);
+        final SplashScreen splashScreen = new SplashScreen("/resources/jifi_logo90.png", true);
         splashScreen.splash();
         try {
 //            String systemLookAndFeelClassName = UIManager.getSystemLookAndFeelClassName();
@@ -549,11 +679,10 @@ public class MainUI implements Extensible {
 
         }
 
+        final MainUI ui = MainUI.getInstance();
         SwingUtilities.invokeLater(new Runnable() {
             @Override
             public void run() {
-                MainUI ui = MainUI.getInstance();
-                ui.loadModulesFrom(PluginManager.getPluginManager());
                 ui.show();
                 splashScreen.dispose();
             }
@@ -570,11 +699,11 @@ public class MainUI implements Extensible {
     }
 
     @Override
-    public void loadModulesFrom(PluginManager pm) {
+    public void loadModulesFrom(EntityManager em) {
 
         //pm.PRINT_TEST();
-        String platformName = pm.getFactoryData("s3f").getProperty("platform_name");
-        String platformVersion = pm.getFactoryData("s3f").getProperty("platform_version");
+        String platformName = em.getData("s3f").getProperty("platform_name");
+        String platformVersion = em.getData("s3f").getProperty("platform_version");
 
         String title = PluginManager.getText("s3f.frame.name") + " [ "
                 + ((platformName == null) ? PluginManager.getText("s3f.frame.defaultplatformtitle") : platformName)
@@ -592,7 +721,7 @@ public class MainUI implements Extensible {
         menuBar.add(windowMenu);
 
         //load singleton and factories from :
-        Data[] factoriesData = pm.getFactoriesData("s3f.guibuilder.*");
+        List<Data> factoriesData = em.getAllData("s3f.guibuilder.*");
 
         if (factoriesData != null) {
             GUIBuilder builder = new GUIBuilder("") {
@@ -681,7 +810,7 @@ public class MainUI implements Extensible {
         }
 
         //s3f menu
-        Object o = PluginManager.getPluginManager().getFactoryProperty("s3f", "hideS3Fmenu");
+        Object o = em.getProperty("s3f", "hideS3Fmenu");
         boolean hideS3Fmenu = o != null && o instanceof Boolean && ((Boolean) o) == true;
         JMenu S3FMenu = new JMenu((hideS3Fmenu) ? "     " : PluginManager.getText("s3f.menu"));
         S3FMenu.add(getS3FPluginConfigurationMenuItem());

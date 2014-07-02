@@ -9,6 +9,11 @@ import java.awt.MediaTracker;
 import java.awt.Rectangle;
 import java.awt.Toolkit;
 import java.awt.Window;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseWheelEvent;
 import java.awt.image.ImageObserver;
 import java.net.URL;
 
@@ -29,6 +34,8 @@ import java.net.URL;
 public final class SplashScreen extends Frame {
 
     private final boolean animated;
+    private boolean asd = false;
+    private int asd2 = 3;
 
     /**
      * Construct using an image for the splash screen.
@@ -89,9 +96,23 @@ public final class SplashScreen extends Frame {
 
                         }
                     }
-                    System.out.println("DONE");
                 }
             }.start();
+
+            MouseAdapter mouseAdapter = new MouseAdapter() {
+                @Override
+                public void mouseClicked(MouseEvent e) {
+                    asd = !asd;
+                }
+
+                @Override
+                public void mouseWheelMoved(MouseWheelEvent e) {
+                    asd2 -= e.getWheelRotation();
+                    asd2 = (asd2 <= 0) ? 1 : (asd2 > 4) ? 4 : asd2;
+                }
+            };
+            splashWindow.addMouseListener(mouseAdapter);
+            splashWindow.addMouseWheelListener(mouseAdapter);
         }
     }
     // PRIVATE//
@@ -135,20 +156,49 @@ public final class SplashScreen extends Frame {
             setVisible(true);
         }
 
+        int b = 0;
+
         @Override
         public void paint(Graphics g2) {
             if (fImage != null) {
                 g2.drawImage(fImage, 0, 0, this);
                 if (animated) {
-                    for (int i = 15; i >= 0; i--) {
-                        g2.setColor(RandomColor.generate(.6f, .9f));
-                        g2.fillRect(i * 15 + 10, getHeight() - 15, 15, 3);
+                    int w;
+                    switch (asd2) {
+                        case 1:
+                            w = 10;
+                            break;
+                        case 2:
+                            w = 25;
+                            break;
+                        case 3:
+                            w = 50;
+                            break;
+                        case 4:
+                            w = 125;
+                            break;
+                        default:
+                            w = 10;
                     }
 
-//                    for (int i = 15; i >= 0; i--) {
-//                        g2.setColor(RandomColor.generate(.6f, .9f));
-//                        g2.fillRect(i * 15 + 10, 0, 15, getHeight());
-//                    }
+                    int n = 250 / w - 1;
+                    if (!asd) {
+                        for (int i = n; i >= 0; i--) {
+                            g2.setColor(RandomColor.generate(.5f, .9f));
+                            //g2.fillRect(i * w + 5, getHeight() - 15, w, 3);
+                            g2.fillRect(i * w + 5, getHeight() - 17, w, 5);
+                            //g2.fillRect(i * w + 5, getHeight() - 9, w, 4);
+                            //g2.fillRect(i * w + 5, getHeight() - 8, w, 3);
+                        }
+                    } else {
+                        b += 3;
+                        for (int i = n; i >= 0; i--) {
+                            g2.setColor(RandomColor.generate(.6f, .99f));
+                            g2.fillRect(i * w + 5, (int) (50 * Math.sin((i - b) / Math.PI)) + 100, w, 110);
+                        }
+                        g2.setColor(Color.BLACK);
+                        g2.fillRect(0, getHeight() - 5, getWidth(), 5);
+                    }
 //                    for (int i = 15; i >= 0; i--) {
 //                        for (int j = 10; j >= 0; j--) {
 //                            g2.setColor(RandomColor.generate(.6f, .9f));

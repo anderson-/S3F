@@ -24,7 +24,6 @@ package s3f.base.code;
 import java.awt.*;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
-import java.util.ArrayList;
 import javax.swing.*;
 import org.fife.ui.autocomplete.*;
 import org.fife.ui.rsyntaxtextarea.AbstractTokenMakerFactory;
@@ -35,12 +34,19 @@ import org.fife.ui.rsyntaxtextarea.TokenMaker;
 import org.fife.ui.rsyntaxtextarea.TokenMakerFactory;
 import org.fife.ui.rsyntaxtextarea.TokenMap;
 import org.fife.ui.rtextarea.RTextScrollPane;
+import s3f.base.plugin.Configurable;
 import s3f.base.plugin.Data;
+import s3f.base.plugin.EntityManager;
 import s3f.base.plugin.Plugabble;
-import s3f.base.plugin.PluginManager;
+import s3f.base.project.Editor;
+import s3f.base.project.Element;
+import s3f.base.project.ProjectTreeTab;
+import s3f.base.script.Script;
 import s3f.base.ui.tab.TabProperty;
 
-public class CodeEditorTab extends EditorTab {
+public class CodeEditorTab implements Editor {
+
+    private static final ImageIcon ICON = new ImageIcon(ProjectTreeTab.class.getResource("/resources/icons/fugue/script-text.png"));
 
     /**
      *
@@ -56,10 +62,11 @@ public class CodeEditorTab extends EditorTab {
     private final Data data;
     private final RSyntaxTextArea textArea;
     private DefaultCompletionProvider completionProvider = null;
+    private Component tabComponent;
     //private static final ArrayList<Class> functionTokenClass = new ArrayList<>();
     //private static final ArrayList<FunctionToken> functionTokenInstances = new ArrayList<>();
 
-    private CodeEditorTab() {
+    public CodeEditorTab() {
         this("plain");
     }
 
@@ -104,7 +111,8 @@ public class CodeEditorTab extends EditorTab {
         autoCompletion.install(textArea);
 
         data = new Data("editorTab", "s3f.base.code", "Editor Tab");
-        TabProperty.put(data, "Editor", null, "Editor de código", new RTextScrollPane(textArea));
+        tabComponent = new RTextScrollPane(textArea);
+        TabProperty.put(data, "Editor", ICON, "Editor de código", tabComponent);
     }
 
     public final void setLanguage(String lang) {
@@ -128,7 +136,7 @@ public class CodeEditorTab extends EditorTab {
         this.completionProvider = completionProvider;
     }
 
-    public DefaultCompletionProvider getCompletionProvider() {
+    public final DefaultCompletionProvider getCompletionProvider() {
         if (completionProvider == null) {
             completionProvider = new DefaultCompletionProvider();
         }
@@ -142,10 +150,11 @@ public class CodeEditorTab extends EditorTab {
      * updateCompletionProvider("s3f.jifi.functions.*","tokenInfo");
      *
      *
+     * @param em
      * @param path
      * @param property
      */
-    public final void updateCompletionProvider(String path, String property) {
+    public final void updateCompletionProvider(EntityManager em, String path, String property) {
 
         AbstractTokenMakerFactory atmf = (AbstractTokenMakerFactory) TokenMakerFactory.getDefaultInstance();
         TokenMaker tokenMaker = atmf.getTokenMaker(textArea.getSyntaxEditingStyle());
@@ -154,7 +163,7 @@ public class CodeEditorTab extends EditorTab {
             tokenMap = ((ExtensibleTokenMaker) tokenMaker).getTokenMap();
         }
 
-        for (Object o : PluginManager.getPluginManager().getFactoriesProperty(path, property)) {
+        for (Object o : em.getAllProperties(path, property)) {
             if (o instanceof Completion) {
                 completionProvider.addCompletion((Completion) o);
                 if (tokenMap != null) {
@@ -249,4 +258,26 @@ public class CodeEditorTab extends EditorTab {
     public Plugabble createInstance() {
         return new CodeEditorTab();
     }
+
+    @Override
+    public void setContent(Element content) {
+        Script s = (Script) content;
+        TabProperty.put(data, s.getName(), ICON, "Editor de código", tabComponent);
+    }
+
+    @Override
+    public Element getContent() {
+        return null;
+    }
+
+    @Override
+    public void update() {
+
+    }
+
+    @Override
+    public void selected() {
+
+    }
+
 }

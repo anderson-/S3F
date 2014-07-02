@@ -42,7 +42,7 @@ public final class Data {
     private String name;
     private String path;
     private ArrayList<Data> children = null;
-    private Plugabble reference = null;
+    private Configurable reference = null;
 
     public Data(String name, String path, String fullName) {
         this.name = name;
@@ -50,13 +50,13 @@ public final class Data {
         this.fullName = fullName;
     }
 
-    public Data(String name, String path, String fullName, Plugabble reference) {
+    public Data(String name, String path, String fullName, Configurable reference) {
         this.name = name;
         this.path = path;
         this.fullName = fullName;
         this.reference = reference;
     }
-
+    
     public String getFullName() {
         return fullName;
     }
@@ -90,7 +90,7 @@ public final class Data {
         this.reference = reference;
     }
 
-    public Plugabble getReference() {
+    public Configurable getReference() {
         return reference;
     }
 
