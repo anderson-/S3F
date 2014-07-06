@@ -31,7 +31,7 @@ import org.mozilla.javascript.SecurityUtilities;
 import org.mozilla.javascript.tools.shell.Global;
 import org.mozilla.javascript.tools.shell.Main;
 
-public class MyJSConsole extends JFrame implements ActionListener {
+public class MyJSConsole extends JFrame implements ActionListener { 
 
     private File CWD;
     private JFileChooser dlg;

@@ -25,18 +25,11 @@
     </editor-bookmarks>
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
         <group>
-            <file>file:/home/antunes/NetBeansProjects/S3F/src/s3f/base/project/FileCreator.java</file>
-            <file>file:/home/antunes/NetBeansProjects/S3F/src/s3f/base/project/editormanager/EditorManager.java</file>
-            <file>file:/home/antunes/NetBeansProjects/S3F/src/s3f/base/project/Element.java</file>
-            <file>file:/home/antunes/NetBeansProjects/S3F/src/s3f/base/project/ProjectTreeTab.java</file>
-            <file>file:/home/antunes/NetBeansProjects/S3F/src/s3f/base/ui/tab/Tab.java</file>
-            <file>file:/home/antunes/NetBeansProjects/S3F/src/s3f/base/ui/MainUI.java</file>
-            <file>file:/home/antunes/NetBeansProjects/S3F/src/s3f/base/code/CodeEditorTab.java</file>
-            <file>file:/home/antunes/NetBeansProjects/S3F/src/s3f/base/project/Project.java</file>
-            <file>file:/home/antunes/NetBeansProjects/S3F/src/s3f/util/ColorUtils.java</file>
-            <file>file:/home/antunes/NetBeansProjects/S3F/src/s3f/base/project/Editor.java</file>
-            <file>file:/home/antunes/NetBeansProjects/S3F/src/s3f/base/script/Script.java</file>
-            <file>file:/home/antunes/NetBeansProjects/S3F/src/s3f/base/code/EditorTab.java</file>
+            <file>file:/home/antunes/NetBeansProjects/S3F/src/s3f/base/simulation/SimulationUtils.java</file>
+            <file>file:/home/antunes/NetBeansProjects/S3F/src/s3f/base/simulation/MultiThreadSimulator.java</file>
+            <file>file:/home/antunes/NetBeansProjects/S3F/src/s3f/base/simulation/System.java</file>
+            <file>file:/home/antunes/NetBeansProjects/S3F/src/s3f/base/simulation/InterpretadorTeste.java</file>
+            <file>file:/home/antunes/NetBeansProjects/S3F/src/s3f/base/simulation/Simulator.java</file>
         </group>
     </open-files>
 </project-private>

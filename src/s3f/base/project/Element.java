@@ -63,6 +63,8 @@ public interface Element extends Plugabble {
 
     public String getName();
 
+    public void setName(String name);
+
     public Icon getIcon();
 
     public CategoryData getCategoryData();
@@ -70,7 +72,7 @@ public interface Element extends Plugabble {
     public void save(FileCreator fileCreator);
 
     public Element load(InputStream stream);
-    
+
     public EditorManager getEditorManager();
 
 }

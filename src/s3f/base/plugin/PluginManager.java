@@ -42,6 +42,7 @@ import java.util.Map.Entry;
 import java.util.ResourceBundle;
 import java.util.TreeMap;
 import s3f.base.project.Element;
+import s3f.base.project.FileCreator;
 import s3f.base.script.ScriptManager;
 import s3f.util.fommil.jni.JniNamer;
 import s3f.util.toml.impl.Toml;
@@ -190,7 +191,7 @@ public class PluginManager {
                                 if (is != null) {
                                     Data data = factoryManager.getData(child.getName().substring(0, child.getName().lastIndexOf('.')));
                                     if (data != null) {
-                                        String cfg = convertInputStreamToString(is);
+                                        String cfg = FileCreator.convertInputStreamToString(is);
                                         Toml parser = Toml.parse(cfg);
                                         Map<String, Object> map = parser.getMap("config");
                                         if (map != null) {
@@ -240,7 +241,7 @@ public class PluginManager {
                                 InputStream is = null;
                                 try {
                                     is = new FileInputStream(child);
-                                    String script = convertInputStreamToString(is);
+                                    String script = FileCreator.convertInputStreamToString(is);
                                     scripts.put(child.getName(), script);
                                 } catch (FileNotFoundException ex) {
                                 } finally {
@@ -332,34 +333,11 @@ public class PluginManager {
         load(loader.getResourceAsStream(pathToConfigPOJO), loader);
     }
 
-    public static String convertInputStreamToString(InputStream is) {
-        BufferedReader br = null;
-        StringBuilder sb = new StringBuilder();
-        String line;
-        try {
-            br = new BufferedReader(new InputStreamReader(is));
-            while ((line = br.readLine()) != null) {
-                sb.append(line).append("\n");
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            if (br != null) {
-                try {
-                    br.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-        return sb.toString();
-    }
-
     private void load(InputStream is, ClassLoader loader) {
         if (is == null) {
             return;
         }
-        load(convertInputStreamToString(is), loader);
+        load(FileCreator.convertInputStreamToString(is), loader);
     }
 
     private boolean validatePlugin(PluginPOJO cfg) {

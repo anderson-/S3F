@@ -37,10 +37,13 @@ import java.awt.event.ActionListener;
 import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
 import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
 import javax.swing.AbstractAction;
+import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
@@ -96,9 +99,11 @@ import s3f.base.plugin.Extensible;
 import s3f.base.plugin.PluginManager;
 import s3f.base.project.Project;
 import s3f.base.project.ProjectTreeTab;
+import s3f.base.project.editormanager.PlainTextFile;
 import s3f.base.script.MyJSConsole;
 import s3f.base.script.Script;
 import s3f.base.script.ScriptEnvironment;
+import s3f.base.simulation.SimulationUtils;
 import s3f.base.ui.tab.Tab;
 import s3f.base.ui.tab.TabProperty;
 import s3f.util.ColorUtils;
@@ -134,6 +139,8 @@ public class MainUI implements Extensible {
     private JCheckBox helpCheckBox;
     private JFileChooser fileChooser;
     private Project project;
+    private ProjectTreeTab projectTreeTab;
+    private int toolbarHeight = 35;
 
     private MainUI() {
         createActions();
@@ -151,8 +158,14 @@ public class MainUI implements Extensible {
 
     private void init() {
         PluginManager pm = PluginManager.getInstance();
-        pm.createFactoryManager(this);
         pm.registerFactory(Script.JS_SCRIPTS);
+        pm.registerFactory(PlainTextFile.PLAIN_TEXT_FILES);
+        pm.registerFactory(new GUIBuilder("tmp") {
+            @Override
+            public void init() {
+            }
+        });
+        pm.createFactoryManager(this);
     }
 
     private void createActions() {
@@ -260,6 +273,7 @@ public class MainUI implements Extensible {
                     File file = fileChooser.getSelectedFile();
 
                     project.load(file.getAbsolutePath());
+                    projectTreeTab.update();
                 }
             }
         };
@@ -285,6 +299,7 @@ public class MainUI implements Extensible {
                     }
 
                     project.save(file.getAbsolutePath());
+                    projectTreeTab.update();
                 }
             }
         };
@@ -337,7 +352,7 @@ public class MainUI implements Extensible {
 
         //ProjectTree & Console
         project = new Project("Projeto");
-        ProjectTreeTab projectTreeTab = new ProjectTreeTab(project);
+        projectTreeTab = new ProjectTreeTab(project);
         View projectTreeView = new View(
                 (String) projectTreeTab.getData().getProperty(TabProperty.TITLE),
                 (Icon) projectTreeTab.getData().getProperty(TabProperty.ICON),
@@ -482,10 +497,13 @@ public class MainUI implements Extensible {
         window.setVisible(true);
     }
 
-    private JSeparator separator() {
+    private JComponent separator() {
+        JPanel p = new JPanel();
         JSeparator sep = new JSeparator(SwingConstants.VERTICAL);
-        sep.setPreferredSize(new Dimension(sep.getPreferredSize().width, 32));
-        return sep;
+        p.add(sep);
+        p.setBorder(BorderFactory.createEmptyBorder(3, 0, 3, 0));
+        sep.setPreferredSize(new Dimension(sep.getPreferredSize().width, 24));
+        return p;
     }
 
     /**
@@ -498,9 +516,14 @@ public class MainUI implements Extensible {
      * @param iconPath
      * @return
      */
-    public static JComponent createToolbarButton(AbstractAction action, String tooltip, String iconPath) {
-        JButton button = new JButton();
+    public static JButton createToolbarButton(AbstractAction action, String tooltip, String iconPath) {
         ImageIcon icon = new ImageIcon(MainUI.class.getResource(iconPath));
+        return createToolbarButton(action, tooltip, icon);
+    }
+
+    public static JButton createToolbarButton(AbstractAction action, String tooltip, ImageIcon icon) {
+        JButton button = new JButton();
+
         button.setIcon(icon);
         button.setRolloverEnabled(true);
         button.setRolloverIcon(new ImageIcon(ColorUtils.imageHSBAchange(icon.getImage(), 0, 0, .1f, 0)));
@@ -511,7 +534,7 @@ public class MainUI implements Extensible {
             button.setToolTipText(tooltip);
         }
         button.setBorderPainted(false);
-        button.setMargin(new Insets(5, 5, 5, 5));
+        button.setMargin(new Insets(3, 3, 3, 3));
         button.setFocusable(false);
         //button.setText("text");
         button.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
@@ -520,7 +543,7 @@ public class MainUI implements Extensible {
         return button;
     }
 
-    public Component addTip(Component c, final String tip) {
+    public static Component addTip(Component c, final String tip) {
         c.addMouseListener(new java.awt.event.MouseAdapter() {
             @Override
             public void mouseEntered(java.awt.event.MouseEvent evt) {
@@ -530,9 +553,9 @@ public class MainUI implements Extensible {
         return c;
     }
 
-    public void printHelp(String str) {
-        if (helpCheckBox.isSelected()) {
-            statusLabel.setText(str);
+    public static void printHelp(String str) {
+        if (MainUI.getInstance().helpCheckBox.isSelected()) {
+            MainUI.getInstance().statusLabel.setText(str);
         }
     }
 
@@ -679,14 +702,23 @@ public class MainUI implements Extensible {
 
         }
 
-        final MainUI ui = MainUI.getInstance();
-        SwingUtilities.invokeLater(new Runnable() {
-            @Override
-            public void run() {
-                ui.show();
-                splashScreen.dispose();
-            }
-        });
+        try {
+            final MainUI ui = MainUI.getInstance();
+            SwingUtilities.invokeLater(new Runnable() {
+                @Override
+                public void run() {
+                    ui.show();
+                    splashScreen.dispose();
+                }
+            });
+        } catch (Throwable t) {
+            t.printStackTrace();
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            PrintStream ps = new PrintStream(baos);
+            t.printStackTrace(ps);
+            String content = baos.toString();
+            splashScreen.showError(content);
+        }
     }
 
     public static LookAndFeel createLookAndFeel(Color c) {
@@ -759,8 +791,16 @@ public class MainUI implements Extensible {
                 tmpWidth += c.getPreferredSize().width;
             }
 
+            {//teste
+                toolBarPanel.add(separator());
+                for (Component c : SimulationUtils.createControlPanel(null)) {
+                    toolBarPanel.add(c);
+                    tmpWidth += c.getPreferredSize().width;
+                }
+            }
+
             final JPanel p = new JPanel();
-            p.setSize(new Dimension(50, 50));
+            p.setSize(new Dimension(50, toolbarHeight));
             toolBarPanel.add(p);
 
             for (Component o : builder.getToolbarComponents(false, 500)) {
@@ -774,7 +814,7 @@ public class MainUI implements Extensible {
             componentListener = new ComponentListener() {
                 @Override
                 public void componentResized(ComponentEvent e) {
-                    p.setPreferredSize(new Dimension(window.getWidth() - width - 2, 50));
+                    p.setPreferredSize(new Dimension(window.getWidth() - width - 2, toolbarHeight));
                     toolBarPanel.updateUI();
                 }
 

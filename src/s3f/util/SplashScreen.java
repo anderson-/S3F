@@ -9,6 +9,8 @@ import java.awt.MediaTracker;
 import java.awt.Rectangle;
 import java.awt.Toolkit;
 import java.awt.Window;
+import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.StringSelection;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseAdapter;
@@ -36,6 +38,9 @@ public final class SplashScreen extends Frame {
     private final boolean animated;
     private boolean asd = false;
     private int asd2 = 3;
+    private boolean error;
+    private int errorX = 0;
+    private String errorMsg = "An error occurred while attempting to initialize the GUI. The stack trace is available in clipboard while this window is open. Click here to close.";
 
     /**
      * Construct using an image for the splash screen.
@@ -102,7 +107,11 @@ public final class SplashScreen extends Frame {
             MouseAdapter mouseAdapter = new MouseAdapter() {
                 @Override
                 public void mouseClicked(MouseEvent e) {
-                    asd = !asd;
+                    if (error) {
+                        System.exit(1);
+                    } else {
+                        asd = !asd;
+                    }
                 }
 
                 @Override
@@ -141,6 +150,13 @@ public final class SplashScreen extends Frame {
         Dimension screen = Toolkit.getDefaultToolkit().getScreenSize();
         Rectangle frame = getBounds();
         setLocation((screen.width - frame.width) / 2, (screen.height - frame.height) / 2);
+    }
+
+    public void showError(String message) {
+        error = true;
+        StringSelection stringSelection = new StringSelection(message);
+        Clipboard clpbrd = Toolkit.getDefaultToolkit().getSystemClipboard();
+        clpbrd.setContents(stringSelection, null);
     }
 
     private class SplashWindow extends Window {
@@ -182,22 +198,38 @@ public final class SplashScreen extends Frame {
                     }
 
                     int n = 250 / w - 1;
-                    if (!asd) {
-                        for (int i = n; i >= 0; i--) {
-                            g2.setColor(RandomColor.generate(.5f, .9f));
-                            //g2.fillRect(i * w + 5, getHeight() - 15, w, 3);
-                            g2.fillRect(i * w + 5, getHeight() - 17, w, 5);
-                            //g2.fillRect(i * w + 5, getHeight() - 9, w, 4);
-                            //g2.fillRect(i * w + 5, getHeight() - 8, w, 3);
-                        }
-                    } else {
-                        b += 3;
-                        for (int i = n; i >= 0; i--) {
-                            g2.setColor(RandomColor.generate(.6f, .99f));
-                            g2.fillRect(i * w + 5, (int) (50 * Math.sin((i - b) / Math.PI)) + 100, w, 110);
-                        }
-                        g2.setColor(Color.BLACK);
+                    if (error) {
+                        g2.setColor(Color.red);
+                        g2.fillRect(5, getHeight() - 21, 250, 12);
+                        g2.setColor(Color.white);
+                        g2.drawString(errorMsg, 20 + errorX, getHeight() - 11);
+                        g2.setColor(Color.black);
+                        g2.fillRect(0, 0, 5, getHeight());
+                        g2.fillRect(getWidth() - 5, 0, 5, getHeight());
+                        g2.fillRect(0, 0, getWidth(), 5);
                         g2.fillRect(0, getHeight() - 5, getWidth(), 5);
+                        if (errorX < -g2.getFontMetrics().stringWidth(errorMsg)) {
+                            errorX = getWidth();
+                        }
+                        errorX -= 5;
+                    } else {
+                        if (!asd) {
+                            for (int i = n; i >= 0; i--) {
+                                g2.setColor(RandomColor.generate(.5f, .9f));
+                                //g2.fillRect(i * w + 5, getHeight() - 15, w, 3);
+                                g2.fillRect(i * w + 5, getHeight() - 17, w, 5);
+                                //g2.fillRect(i * w + 5, getHeight() - 9, w, 4);
+                                //g2.fillRect(i * w + 5, getHeight() - 8, w, 3);
+                            }
+                        } else {
+                            b += 3;
+                            for (int i = n; i >= 0; i--) {
+                                g2.setColor(RandomColor.generate(.6f, .99f));
+                                g2.fillRect(i * w + 5, (int) (50 * Math.sin((i - b) / Math.PI)) + 100, w, 110);
+                            }
+                            g2.setColor(Color.BLACK);
+                            g2.fillRect(0, getHeight() - 5, getWidth(), 5);
+                        }
                     }
 //                    for (int i = 15; i >= 0; i--) {
 //                        for (int j = 10; j >= 0; j--) {

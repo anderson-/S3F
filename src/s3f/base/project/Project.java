@@ -3,19 +3,18 @@
  *
  * Copyright (C) 2014
  *
- *       Anderson de Oliveira Antunes <anderson.utf@gmail.com>
+ * Anderson de Oliveira Antunes <anderson.utf@gmail.com>
  *
  * This file is part of S3F.
  *
- * S3F is free software: you can redistribute it and/or modify it
- * under the terms of the GNU General Public License as published by the Free
- * Software Foundation, either version 3 of the License, or (at your option) any
- * later version.
+ * S3F is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option) any later
+ * version.
  *
- * S3F is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
- * details.
+ * S3F is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+ * A PARTICULAR PURPOSE. See the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License along with
  * S3F. If not, see http://www.gnu.org/licenses/.
@@ -30,9 +29,11 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Enumeration;
+import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
+import s3f.base.plugin.PluginManager;
 import s3f.base.project.Element.CategoryData;
 import s3f.base.ui.tab.Tab;
 //import robotinterface.algorithm.parser.Parser;
@@ -45,7 +46,6 @@ public class Project {
 
     public static final String FILE_EXTENSION = "proj";
     private final ArrayList<Element> elements = new ArrayList<>();
-    private final ArrayList<CategoryData> categories = new ArrayList<>();
     private String name;
 //    private final ArrayList<Program> programs = new ArrayList<>();
     //private final Interpreter interpreter;
@@ -65,10 +65,6 @@ public class Project {
 
     public void addElement(Element element) {
         elements.add(element);
-        CategoryData cd = element.getCategoryData();
-        if (!categories.contains(cd)) {
-            categories.add(cd);
-        }
     }
 
     public Collection<Element> getElements(String category) {
@@ -79,10 +75,6 @@ public class Project {
             }
         }
         return newElementList;
-    }
-
-    public Collection<CategoryData> getElementsCategories() {
-        return categories;
     }
 
     public Collection<Tab> getDefaultViews() {
@@ -113,6 +105,8 @@ public class Project {
 
             File file;
             FileCreator fileCreator = FileCreator.getInstance();
+
+            List<Element.CategoryData> categories = PluginManager.getInstance().createFactoryManager(null).getEntities("s3f.base.project.category.*");
             for (CategoryData category : categories) {
                 addFolderToZip("", category.getName(), zip);
 
@@ -236,11 +230,16 @@ public class Project {
 
                 InputStream stream = zipFile.getInputStream(entry);
 
+                List<Element.CategoryData> categories = PluginManager.getInstance().createFactoryManager(null).getEntities("s3f.base.project.category.*");
                 for (CategoryData category : categories) {
-                    if (entry.getName().startsWith(category.getName() + "/")
-                            && entry.getName().endsWith(category.getExtension())) {
+                    String name = entry.getName();
+                    if (name.startsWith(category.getName() + "/")
+                            && name.endsWith(category.getExtension())) {
                         Element element = category.getStaticInstance().load(stream);
                         if (element != null) {
+                            System.out.println("new");
+                            name = name.substring(name.indexOf("/") + 1, name.lastIndexOf("."));
+                            element.setName(name);
                             addElement(element);
                         }
                         break;

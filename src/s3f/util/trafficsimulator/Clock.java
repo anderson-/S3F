@@ -27,7 +27,7 @@ import java.util.Iterator;
 /**
  * Classe responsavel por gerenciar o tempo da simulação e eventos.
  */
-public class Clock extends Thread {
+public class Clock extends Thread { 
 
     private int d;
     private int h;

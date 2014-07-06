@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package s3f.base.script;
+package s3f.base.project.editormanager;
 
 import java.io.InputStream;
 import javax.swing.Icon;
@@ -14,29 +14,25 @@ import s3f.base.plugin.Data;
 import s3f.base.plugin.Plugabble;
 import s3f.base.project.Element;
 import s3f.base.project.FileCreator;
-import s3f.base.project.editormanager.DefaultEditorManager;
-import s3f.base.project.editormanager.EditorManager;
-import s3f.base.project.editormanager.TextFile;
 
 /**
  *
  * @author antunes
  */
-public class Script implements Element, TextFile {
+public class PlainTextFile implements Element, TextFile {
 
-    public static final Element JS_SCRIPT = new Script();
-    public static final Element.CategoryData JS_SCRIPTS = new Element.CategoryData("Scripts", "js", new ImageIcon(Script.class.getResource("/resources/icons/fugue/scripts-text.png")), JS_SCRIPT);
+    public static final Element PLAIN_TEXT_FILE = new PlainTextFile();
+    public static final Element.CategoryData PLAIN_TEXT_FILES = new Element.CategoryData("Plain Text", "txt", new ImageIcon(PlainTextFile.class.getResource("/resources/icons/fugue/scripts-text.png")), PLAIN_TEXT_FILE);
     private static final EditorManager EDITOR_MANAGER = new DefaultEditorManager(new CodeEditorTab());
 
-    private String name = "asd" + Math.random();
-    private String script;
+    private String name = "sss" + Math.random();
+    private String text;
     private Data data;
 
-    ImageIcon a = new ImageIcon(Script.class.getResource("/resources/icons/fugue/script-text.png"));
-    ImageIcon b = new ImageIcon(Script.class.getResource("/resources/icons/fugue/script-smiley.png"));
+    ImageIcon a = new ImageIcon(PlainTextFile.class.getResource("/resources/icons/fugue/document-text.png"));
 
-    public Script() {
-        data = new Data("script", "s3f.base.project.element", "sei lá");
+    public PlainTextFile() {
+        data = new Data("plaintext", "s3f.base.project.element", "sei lá");
     }
 
     @Override
@@ -51,30 +47,26 @@ public class Script implements Element, TextFile {
 
     @Override
     public Icon getIcon() {
-        if (Math.random() < 0.5) {
-            return a;
-        } else {
-            return b;
-        }
+        return a;
     }
 
     @Override
-    public CategoryData getCategoryData() {
-        return JS_SCRIPTS;
+    public Element.CategoryData getCategoryData() {
+        return PLAIN_TEXT_FILES;
     }
 
     @Override
     public void save(FileCreator fileCreator) {
         StringBuilder sb = new StringBuilder();
         sb.append(getText());
-        fileCreator.makeTextFile(name, JS_SCRIPTS.getExtension(), sb);
+        fileCreator.makeTextFile(name, PLAIN_TEXT_FILES.getExtension(), sb);
     }
 
     @Override
     public Element load(InputStream stream) {
-        Script newScript = new Script();
-        newScript.setText(FileCreator.convertInputStreamToString(stream));
-        return newScript;
+        PlainTextFile txtFile = new PlainTextFile();
+        txtFile.setText(FileCreator.convertInputStreamToString(stream));
+        return txtFile;
     }
 
     @Override
@@ -84,7 +76,7 @@ public class Script implements Element, TextFile {
 
     @Override
     public Plugabble createInstance() {
-        return new Script();
+        return new PlainTextFile();
     }
 
     @Override
@@ -104,12 +96,12 @@ public class Script implements Element, TextFile {
 
     @Override
     public void setText(String text) {
-        this.script = text;
+        this.text = text;
     }
 
     @Override
     public String getText() {
-        return script;
+        return text;
     }
 
 }

@@ -84,6 +84,22 @@ public class ProjectTreeTab implements Tab, Extensible {
         createUI();
     }
 
+    private void createElement(Element.CategoryData category) {
+        Element element = (Element) category.getStaticInstance().createInstance();
+        project.addElement(element);
+        createElement(element);
+    }
+
+    private void createElement(Element element) {
+        Editor editor = (Editor) element.getEditorManager().getDefaultEditor().createInstance();
+        editor.setContent(element);
+
+        openEditors.put(element, editor);
+        MainUI.getInstance().addView(1, editor);
+
+        update();
+    }
+
     private void createUI() {
         JPopupMenu popupMenu = new JPopupMenu();
         JMenuItem jMenuItem = new JMenu("Novo");
@@ -116,20 +132,7 @@ public class ProjectTreeTab implements Tab, Extensible {
                                             //default editor...
                                             //set default editor...
 
-                                            Element element = (Element) c.getStaticInstance().createInstance();
-
-                                            project.addElement(element);
-
-                                            Editor editor = (Editor) element.getEditorManager().getDefaultEditor().createInstance();
-                                            editor.setContent(element);
-
-                                            openEditors.put(element, editor);
-                                            MainUI.getInstance().addView(1, editor);
-
-//                                            if (userObject instanceof Configurable) {
-//                                                Component component = ((Configurable) userObject).getData().getProperty(TabProperty.COMPONENT);
-//                                            }
-                                            update();
+                                            createElement(c);
                                         }
 
                                     }
@@ -215,7 +218,7 @@ public class ProjectTreeTab implements Tab, Extensible {
                                     System.out.println("comp is null");
                                 }
                             } else {
-                                System.out.println("editor is null");
+                                createElement(element);
                             }
 
                         } else {
@@ -229,34 +232,53 @@ public class ProjectTreeTab implements Tab, Extensible {
         tree.addMouseListener(ml);
 
 //        final TreeCellEditor editor = new DefaultTreeCellEditor(tree, (DefaultTreeCellRenderer) tree.getCellRenderer()) {
-//            @Override
-//            protected boolean canEditImmediately(EventObject event) {
-//                if ((event instanceof MouseEvent)
-//                        && SwingUtilities.isLeftMouseButton((MouseEvent) event)) {
-//                    MouseEvent e = (MouseEvent) event;
-//
-//                    int selRow = tree.getRowForLocation(e.getX(), e.getY());
-//                    TreePath selPath = tree.getPathForLocation(e.getX(), e.getY());
-//                    if (selRow != -1 && selPath != null) {
-//                        Object[] path = selPath.getPath();
-//                        DefaultMutableTreeNode dmtn = (DefaultMutableTreeNode) path[path.length - 1];
-//                        Object userObject = dmtn.getUserObject();
-//
-//                        if (userObject instanceof Project) {
-//                            Project project = (Project) userObject;
-//                            return ((e.getClickCount() == 2)
-//                                    && inHitRegion(e.getX(), e.getY()));
-//                        }
-//                    }
-//                }
-//                return (event == null);
-//            }
+////            @Override
+////            protected boolean canEditImmediately(EventObject event) {
+////                if ((event instanceof MouseEvent)
+////                        && SwingUtilities.isLeftMouseButton((MouseEvent) event)) {
+////                    MouseEvent e = (MouseEvent) event;
+////
+////                    int selRow = tree.getRowForLocation(e.getX(), e.getY());
+////                    TreePath selPath = tree.getPathForLocation(e.getX(), e.getY());
+////                    if (selRow != -1 && selPath != null) {
+////                        Object[] path = selPath.getPath();
+////                        DefaultMutableTreeNode dmtn = (DefaultMutableTreeNode) path[path.length - 1];
+////                        Object userObject = dmtn.getUserObject();
+////
+////                        if (userObject instanceof Element) {
+////                            return ((e.getClickCount() == 3)
+////                                    && inHitRegion(e.getX(), e.getY()));
+////                        }
+////                    }
+////                }
+////                return (event == null);
+////            }
 //        };
-//        editor.addCellEditorListener(new CellEditorListener() {
 //
+//        editor.addCellEditorListener(new CellEditorListener() {
 //            @Override
 //            public void editingStopped(ChangeEvent e) {
-//                project.setName(editor.getCellEditorValue().toString());
+//                System.out.println(tree.getLastSelectedPathComponent().getClass());
+//                
+//                if (tree.getLastSelectedPathComponent() instanceof DefaultMutableTreeNode) {
+//                    
+//                    DefaultMutableTreeNode dmtn = (DefaultMutableTreeNode) tree.getLastSelectedPathComponent();
+//                    Object userObject = dmtn.getUserObject();
+//                    System.out.println(userObject.getClass());
+//
+//                    if (userObject instanceof Element) {
+//                        Element element = (Element) userObject;
+//                        element.setName(editor.getCellEditorValue().toString());
+//                        SwingUtilities.invokeLater(new Runnable() {
+//                            @Override
+//                            public void run() {
+//                                update();
+//                            }
+//                        });
+//                    } else {
+//                        System.out.println("???" + userObject.getClass());
+//                    }
+//                }
 //            }
 //
 //            @Override
@@ -276,7 +298,8 @@ public class ProjectTreeTab implements Tab, Extensible {
     public final void update() {
         DefaultMutableTreeNode top = new DefaultMutableTreeNode(project);
         tree.setModel(new DefaultTreeModel(top));
-        for (Element.CategoryData category : project.getElementsCategories()) {
+        List<Element.CategoryData> categories = PluginManager.getInstance().createFactoryManager(null).getEntities("s3f.base.project.category.*");
+        for (Element.CategoryData category : categories) {
             DefaultMutableTreeNode elementCategory = new DefaultMutableTreeNode(category);
 
             top.add(elementCategory);

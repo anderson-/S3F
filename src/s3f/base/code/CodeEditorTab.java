@@ -25,6 +25,8 @@ import java.awt.*;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import org.fife.ui.autocomplete.*;
 import org.fife.ui.rsyntaxtextarea.AbstractTokenMakerFactory;
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
@@ -41,6 +43,7 @@ import s3f.base.plugin.Plugabble;
 import s3f.base.project.Editor;
 import s3f.base.project.Element;
 import s3f.base.project.ProjectTreeTab;
+import s3f.base.project.editormanager.TextFile;
 import s3f.base.script.Script;
 import s3f.base.ui.tab.TabProperty;
 
@@ -261,8 +264,36 @@ public class CodeEditorTab implements Editor {
 
     @Override
     public void setContent(Element content) {
-        Script s = (Script) content;
-        TabProperty.put(data, s.getName(), ICON, "Editor de código", tabComponent);
+        if (content instanceof TextFile) {
+            final TextFile textFile = (TextFile) content;
+            textArea.setText(textFile.getText());
+            textArea.getDocument().addDocumentListener(new DocumentListener() {
+                @Override
+                public void insertUpdate(DocumentEvent e) {
+                }
+
+                @Override
+                public void removeUpdate(DocumentEvent e) {
+                }
+
+                @Override
+                public void changedUpdate(DocumentEvent e) {
+                    textFile.setText(textArea.getText());
+                }
+            });
+        }
+
+        switch (content.getCategoryData().getExtension()) {
+            case "js":
+                setLanguage("javascript");
+                break;
+            default:
+                setLanguage("plain");
+                break;
+        }
+
+        setLanguage(null);
+        TabProperty.put(data, content.getName(), ICON, "Editor de código", tabComponent);
     }
 
     @Override

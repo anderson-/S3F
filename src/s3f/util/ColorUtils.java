@@ -7,6 +7,7 @@ package s3f.util;
 
 import java.awt.Color;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.image.BufferedImage;
 import java.util.Arrays;
@@ -75,5 +76,16 @@ public class ColorUtils {
         }
         return bi;
     }
+    
+    
 
+    public static BufferedImage imageRotate(Image img, int angle) {
+        BufferedImage bi = new BufferedImage(img.getWidth(null), img.getHeight(null), BufferedImage.TYPE_INT_ARGB);
+        Graphics2D graphics = (Graphics2D) bi.getGraphics();
+        graphics.rotate(Math.toRadians(angle),26,26);
+        graphics.drawImage(img, 0, 0, null);
+        graphics.dispose();
+        return bi;
+    }
+    
 }
