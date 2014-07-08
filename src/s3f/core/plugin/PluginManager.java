@@ -48,6 +48,7 @@ import s3f.util.toml.impl.Toml;
 public class PluginManager {
 
     private static PluginManager PLUGIN_MANAGER = null;
+    public static boolean LOCAL = false;
 
     public static PluginManager getInstance() {
         if (PLUGIN_MANAGER == null) {
@@ -126,7 +127,7 @@ public class PluginManager {
 
     private void init() {
         loadPlugins();
-        initPlugins();
+//        initPlugins();
         loadConfigurationFiles();
         runUserScripts();
     }
@@ -142,7 +143,7 @@ public class PluginManager {
 
         ArrayList<String> pluginPaths = new ArrayList<>();
 
-        if (classRunningPath.endsWith(".jar")) {
+        if (classRunningPath.endsWith(".jar") && !LOCAL) {
             int i = classRunningPath.lastIndexOf('/');
             classRunningPath = classRunningPath.substring(0, i);
 
@@ -186,27 +187,26 @@ public class PluginManager {
             File dataDir = new File(classRunningPath + "/data");
 
         }
-        
-        loadSoftPlugin("s3f/plugin.cfg");
-        
+
+        loadSoftPlugin("s3f/plugin.cfg", null);
+
         System.gc();
     }
 
-    private void initPlugins() {
-        List<Data> factoriesData = factoryManager.getAllData("s3f.pluginbuilder.*");
-
-        if (factoriesData != null) {
-            for (Data d : factoriesData) {
-                if (d != null && d.getReference() instanceof PluginBuilder) {
-                    PluginBuilder pb = (PluginBuilder) d.getReference();
-                    pb.setPluginManager(this);
-                    System.out.println(pb.data.getName());
-                    pb.init();
-                }
-            }
-        }
-    }
-
+//    private void initPlugins() {
+//        List<Data> factoriesData = factoryManager.getAllData("s3f.pluginbuilder.*");
+//
+//        if (factoriesData != null) {
+//            for (Data d : factoriesData) {
+//                if (d != null && d.getReference() instanceof PluginBuilder) {
+//                    PluginBuilder pb = (PluginBuilder) d.getReference();
+//                    pb.setPluginManager(this);
+//                    System.out.println("init-plugin " + pb.data.getName());
+//                    pb.init();
+//                }
+//            }
+//        }
+//    }
     private void loadConfigurationFiles() {
         String classRunningPath = PluginManager.class.getProtectionDomain().getCodeSource().getLocation().getPath();
 
@@ -343,13 +343,16 @@ public class PluginManager {
      * Carrega um novo plugin...
      *
      * @param pathToJar
+     * @param parent
+     * @return
      */
     public ClassLoader loadPlugin(String pathToJar, ClassLoader parent) {
         try {
             File jar = new File(pathToJar);
-            //ClassLoader loader = URLClassLoader.newInstance(new URL[]{jar.toURI().toURL()});
+            //ClassLoader loader = URLClassLoader.newInstance(new URL[]{jar.toURI().toURL()});            
             ClassLoader loader = new ParentLastURLClassLoader(new URL[]{jar.toURI().toURL()}, parent);
-            load(loader.getResourceAsStream("plugin.cfg"), loader);
+            String name = pathToJar.substring(pathToJar.lastIndexOf("/") + 1, pathToJar.lastIndexOf("."));
+            load(loader.getResourceAsStream("s3f/" + name.toLowerCase() + "/plugin.cfg"), loader);
             return loader;
         } catch (MalformedURLException ex) {
             ex.printStackTrace();
@@ -362,17 +365,20 @@ public class PluginManager {
      * para uso.
      *
      * @param pathToConfigPOJO
+     * @param loader
      * @deprecated
      */
     @Deprecated
-    public void loadSoftPlugin(String pathToConfigPOJO) {
-        ClassLoader loader = ClassLoader.getSystemClassLoader();
-        //loader.getResources(pathToConfigPOJO); é melhor?
+    public void loadSoftPlugin(String pathToConfigPOJO, ClassLoader loader) {
+        if (loader == null) {
+            loader = ClassLoader.getSystemClassLoader();
+        }
         load(loader.getResourceAsStream(pathToConfigPOJO), loader);
     }
 
     private void load(InputStream is, ClassLoader loader) {
         if (is == null) {
+            System.out.println("invalid plugin");
             return;
         }
         load(FileCreator.convertInputStreamToString(is), loader);
@@ -412,13 +418,15 @@ public class PluginManager {
         return false;
     }
 
-    public void registerClass(String className, ClassLoader loader)
+    public Data registerClass(String className, ClassLoader loader)
             throws ClassNotFoundException, InstantiationException, IllegalAccessException {
         Class c = loader.loadClass(className);
         if (Plugabble.class.isAssignableFrom(c)) {
             Plugabble p = (Plugabble) c.newInstance();
             addNode(p.getData().getPath(), p.getData(), factoryTreeRoot);
+            return p.getData();
         }
+        return null;
     }
 
     /**
@@ -522,12 +530,17 @@ public class PluginManager {
         }
 
         if (cfg.builder != null) {
-            registerClass(cfg.builder, loader);
+            Data reg = registerClass(cfg.builder, loader);
+            //inicializa plugin
+            if (reg != null && reg.getReference() instanceof PluginBuilder) {
+                PluginBuilder pb = (PluginBuilder) reg.getReference();
+                pb.setPluginManager(this);
+                pb.init();
+            }
         }
 
         //expande o ramo construtor da gui
         if (cfg.guibuilder != null) {
-            System.out.println("register class gui");
             registerClass(cfg.guibuilder, loader);
         }
     }
@@ -537,7 +550,6 @@ public class PluginManager {
             Toml parser = Toml.parse(pojo);
             PluginPOJO cfg = parser.getAs("plugin", PluginPOJO.class);
             if (validatePlugin(cfg)) {
-                System.out.println("reg plugin: " + cfg.fullName);
                 registerPlugin(cfg, loader);
             } else {
                 System.out.println("invalid plugin: " + cfg.fullName);

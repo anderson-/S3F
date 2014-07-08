@@ -25,12 +25,7 @@
     </editor-bookmarks>
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
         <group>
-            <file>file:/home/antunes/NetBeansProjects/S3F/src/s3f/core/plugin/EntityManager.java</file>
-            <file>file:/home/antunes/NetBeansProjects/S3F/src/s3f/core/project/Editor.java</file>
-            <file>file:/home/antunes/NetBeansProjects/S3F/src/s3f/core/project/editormanager/TextFile.java</file>
-            <file>file:/home/antunes/NetBeansProjects/S3F/src/s3f/core/code/CodeEditorTab.java</file>
-            <file>file:/home/antunes/NetBeansProjects/S3F/src/s3f/core/simulation/MultiThreadSimulator.java</file>
-            <file>file:/home/antunes/NetBeansProjects/S3F/src/s3f/core/project/ProjectTreeTab.java</file>
+            <file>file:/home/antunes/NetBeansProjects/S3F/src/s3f/core/simulation/DummySystem.java</file>
         </group>
     </open-files>
 </project-private>

@@ -25,6 +25,8 @@ public interface System {
 
     public static final int PAUSED = 0;
     public static final int RUNNING = 1;
+    public static final int DONE = 2;
+    public static final int RESET = 3;
 
     public void setSystemState(int state);
 

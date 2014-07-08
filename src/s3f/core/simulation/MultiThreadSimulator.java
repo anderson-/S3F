@@ -66,7 +66,7 @@ public class MultiThreadSimulator implements Simulator {
         }
     }
 
-    public static final int STEP = 2;
+    public static final int STEP = 4;
     public static final String PROPERTY_STATE = "state";
     public static final String PROPERTY_STATUS = "status";
     public static final String PROPERTY_STATUS_RUNNING = "running";
@@ -86,7 +86,7 @@ public class MultiThreadSimulator implements Simulator {
         systems = new ArrayList<>();
         pool = new ArrayList<>();
         support = new PropertyChangeSupport(this);
-        
+
         new Thread(this).start();
     }
 
@@ -101,6 +101,9 @@ public class MultiThreadSimulator implements Simulator {
 
     @Override
     public void setSystemState(int state) {
+        if (this.state == DONE && state != PAUSED) {
+            reset();
+        }
         support.firePropertyChange(PROPERTY_STATE, this.state, state);
         this.state = state;
     }
@@ -112,14 +115,27 @@ public class MultiThreadSimulator implements Simulator {
 
     @Override
     public void add(System s) {//134691220
-        systems.add(s);
-        pool.add(new StepDispatchThread(s));
+        if (!systems.contains(s)) {
+            systems.add(s);
+            pool.add(new StepDispatchThread(s));
+        }
     }
 
     private synchronized void step() {
         support.firePropertyChange(PROPERTY_STEP, null, PROPERTY_STEP_BEGIN);
         boolean next = false;
         long time = java.lang.System.currentTimeMillis();
+        int systemsState = DONE;
+        for (System s : systems) {
+            systemsState &= s.getSystemState();
+        }
+        if (systemsState == DONE) {
+            state = DONE;
+            support.firePropertyChange(PROPERTY_STATUS, PROPERTY_STATUS_RUNNING, PROPERTY_STATUS_PAUSED);
+            support.firePropertyChange(PROPERTY_STATUS, null, PROPERTY_STATUS_RESETED);
+            return;
+        }
+
         beginStep();
         for (System s : systems) {
             s.beginStep();
@@ -152,6 +168,8 @@ public class MultiThreadSimulator implements Simulator {
         }
         performStep();
 
+//        java.lang.System.out.println("step");
+
 //        java.lang.System.out.println("k:" + k);
 //        java.lang.System.out.println("TEMPO DO PASSO: " + (java.lang.System.currentTimeMillis() - time) + "ms.");
         support.firePropertyChange(PROPERTY_STEP, null, PROPERTY_STEP_END);
@@ -167,6 +185,9 @@ public class MultiThreadSimulator implements Simulator {
                 //for (int i = 0; i < 4; i++) {
                 if (state == RUNNING) {
                     step();
+                } else if (state == RESET) {
+                    reset();
+                    state = PAUSED;
                 } else if (state == STEP) {
                     step();
                     state = PAUSED;

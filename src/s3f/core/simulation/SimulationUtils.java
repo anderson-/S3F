@@ -71,7 +71,7 @@ public class SimulationUtils {
         AbstractAction stopAction = new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                simulator.reset();
+                simulator.setSystemState(MultiThreadSimulator.RESET);
             }
         };
 
