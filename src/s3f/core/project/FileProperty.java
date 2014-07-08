@@ -1,5 +1,5 @@
 /**
- * S3F.java
+ * FileProperty.java
  *
  * Copyright (C) 2014
  *
@@ -19,13 +19,21 @@
  * You should have received a copy of the GNU General Public License along with
  * S3F. If not, see http://www.gnu.org/licenses/.
  */
-package s3f;
+package s3f.core.project;
 
-import s3f.core.ui.MainUI;
+import s3f.core.plugin.Data;
 
-public class S3F {
+public final class FileProperty {
 
-    public static void main(String[] args) {
-        MainUI.buildAndRun();
+    public static final String SAVE = "save";
+
+    private FileProperty() {
+
     }
+
+    public static void put(Data data, boolean save, String dir, String fileExtension, FileParser parser) {
+        data.setProperty(FileProperty.SAVE, save);
+        //...
+    }
+
 }

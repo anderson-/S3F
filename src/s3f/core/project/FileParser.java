@@ -1,5 +1,5 @@
 /**
- * S3F.java
+ * Parser.java
  *
  * Copyright (C) 2014
  *
@@ -19,13 +19,18 @@
  * You should have received a copy of the GNU General Public License along with
  * S3F. If not, see http://www.gnu.org/licenses/.
  */
-package s3f;
+package s3f.core.project;
 
-import s3f.core.ui.MainUI;
+import java.io.File;
 
-public class S3F {
+public class FileParser {
 
-    public static void main(String[] args) {
-        MainUI.buildAndRun();
+    public void tryEncode(File file) throws Exception {
+
     }
+
+    public void tryDecode(File file) throws Exception {
+
+    }
+
 }

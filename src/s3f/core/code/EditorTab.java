@@ -1,5 +1,5 @@
 /**
- * S3F.java
+ * EditorTab.java
  *
  * Copyright (C) 2014
  *
@@ -19,13 +19,25 @@
  * You should have received a copy of the GNU General Public License along with
  * S3F. If not, see http://www.gnu.org/licenses/.
  */
-package s3f;
+package s3f.core.code;
 
-import s3f.core.ui.MainUI;
+import s3f.core.plugin.Plugabble;
+import s3f.core.ui.tab.Tab;
 
-public class S3F {
-
-    public static void main(String[] args) {
-        MainUI.buildAndRun();
-    }
-}
+//public abstract class EditorTab implements Tab, Plugabble {
+//
+//    public EditorTab(){
+//        
+//    }
+//
+//    @Override
+//    public void update() {
+//        
+//    }
+//
+//    @Override
+//    public void selected() {
+//        
+//    }
+//
+//}

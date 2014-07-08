@@ -1,5 +1,5 @@
 /**
- * S3F.java
+ * Simulator.java
  *
  * Copyright (C) 2014
  *
@@ -19,13 +19,10 @@
  * You should have received a copy of the GNU General Public License along with
  * S3F. If not, see http://www.gnu.org/licenses/.
  */
-package s3f;
+package s3f.core.simulation;
 
-import s3f.core.ui.MainUI;
+public interface Simulator extends Runnable, System {
 
-public class S3F {
+    public void add(System s);
 
-    public static void main(String[] args) {
-        MainUI.buildAndRun();
-    }
 }

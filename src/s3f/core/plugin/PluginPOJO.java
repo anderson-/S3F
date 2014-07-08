@@ -1,5 +1,5 @@
 /**
- * S3F.java
+ * PluginConfigurationFilePOJO.java
  *
  * Copyright (C) 2014
  *
@@ -19,13 +19,23 @@
  * You should have received a copy of the GNU General Public License along with
  * S3F. If not, see http://www.gnu.org/licenses/.
  */
-package s3f;
+package s3f.core.plugin;
 
-import s3f.core.ui.MainUI;
+import java.util.List;
 
-public class S3F {
+public class PluginPOJO {
 
-    public static void main(String[] args) {
-        MainUI.buildAndRun();
-    }
+    public String name;
+    public String fullName;
+    public String path;
+    public String langFolder;
+    public String version;
+    public List<String> dependencies;
+    public List<String> content;
+    public String builder;
+    public String guibuilder;
+    public Boolean platform;
+    public Boolean extension;
+    public Boolean pack;
+    public List<String> nativeLibs;
 }

@@ -1,5 +1,5 @@
 /**
- * S3F.java
+ * System.java
  *
  * Copyright (C) 2014
  *
@@ -19,13 +19,31 @@
  * You should have received a copy of the GNU General Public License along with
  * S3F. If not, see http://www.gnu.org/licenses/.
  */
-package s3f;
+package s3f.core.simulation;
 
-import s3f.core.ui.MainUI;
+public interface System {
 
-public class S3F {
+    public static final int PAUSED = 0;
+    public static final int RUNNING = 1;
 
-    public static void main(String[] args) {
-        MainUI.buildAndRun();
-    }
+    public void setSystemState(int state);
+
+    public int getSystemState();
+
+    /**
+     * Utilizado para atualiazar algumas variaveis antes de começar um novo
+     * ciclo.
+     */
+    public void beginStep();
+
+    /**
+     * Executa um passo local. Restornar false indica que este sistema não está
+     * pronto para um novo passo global, retornar true indica que um novo passo
+     * global pode ser iniciado.
+     *
+     * @return retorna false para continuar, e true para sair, do ciclo global
+     */
+    public boolean performStep();
+
+    public void reset();
 }
