@@ -22,7 +22,7 @@ S3F foi desenvolvido para permitir a criação de plugins para a segunda versão
 
 **Gif versão alfa (S3F + Magenta + JIFI + DWRS):**
 
-![gif](http://s27.postimg.org/yes5pr2c1/outfin.gif "S3F+Magenta+JIFI+DWRS versão alfa")
+![gif](https://github.com/anderson-/S3F/raw/master/alfa.gif "S3F+Magenta+JIFI+DWRS versão alfa")
 
 Quero Contribuir!
 -----------------
