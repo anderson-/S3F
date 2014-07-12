@@ -5,9 +5,14 @@
  */
 package s3f.core.project;
 
+import java.io.InputStream;
 import javax.swing.Icon;
+import javax.swing.ImageIcon;
 import s3f.core.plugin.Data;
+import s3f.core.plugin.Plugabble;
 import s3f.core.project.editormanager.EditorManager;
+import s3f.core.project.editormanager.TextFile;
+import s3f.core.script.Script;
 
 /**
  *
@@ -20,13 +25,35 @@ public abstract class SimpleElement implements Element {
     private Icon icon;
     private final CategoryData category;
     private final EditorManager editorManager;
+    private Editor editor;
 
-    public SimpleElement(String name, Icon icon, Element.CategoryData category, EditorManager editorManager) {
+    public SimpleElement(String name, String iconpath, Element.CategoryData category, EditorManager editorManager) {
         this.name = name;
-        this.icon = icon;
+        this.icon = new ImageIcon(getClass().getResource(iconpath));
         this.category = category;
         this.editorManager = editorManager;
-        data = new Data(name, "s3f.base.project.element", "sei lá");
+        data = new Data(name, "s3f.core.project.element", "sei lá");
+    }
+
+    @Override
+    public void save(FileCreator fileCreator) {
+        if (this instanceof TextFile) {
+            TextFile textFile = (TextFile) this;
+            StringBuilder sb = new StringBuilder();
+            sb.append(textFile.getText());
+            fileCreator.makeTextFile(getName(), category.getExtension(), sb);
+        }
+    }
+
+    @Override
+    public Element load(InputStream stream) {
+        Plugabble instance = createInstance();
+        if (instance instanceof TextFile) {
+            TextFile textFile = (TextFile) instance;
+            textFile.setText(FileCreator.convertInputStreamToString(stream));
+            return textFile;
+        }
+        return null;
     }
 
     @Override
@@ -43,7 +70,7 @@ public abstract class SimpleElement implements Element {
     public Icon getIcon() {
         return icon;
     }
-    
+
     public void setIcon(Icon icon) {
         this.icon = icon;
     }
@@ -72,4 +99,14 @@ public abstract class SimpleElement implements Element {
     public EditorManager getEditorManager() {
         return editorManager;
     }
+
+    @Override
+    public void setCurrentEditor(Editor editor) {
+        this.editor = editor;
+    }
+
+    public Editor getCurrentEditor() {
+        return editor;
+    }
+
 }

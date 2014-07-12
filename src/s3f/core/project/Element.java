@@ -6,6 +6,8 @@
 package s3f.core.project;
 
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 import javax.swing.Icon;
 import s3f.core.plugin.Configurable;
 import s3f.core.plugin.Data;
@@ -23,15 +25,24 @@ public interface Element extends Plugabble {
         protected String name;
         protected String extension;
         protected Icon icon;
-        protected Element staticInstance;
+        protected ArrayList<Element> staticInstances;
         private Data data;
 
         public CategoryData(String name, String extension, Icon icon, Element staticInstance) {
+            this(name, extension, icon);
+            staticInstances.add(staticInstance);
+        }
+
+        public CategoryData(String name, String extension, Icon icon) {
             this.name = name;
             this.extension = extension;
             this.icon = icon;
-            this.staticInstance = staticInstance;
-            data = new Data(name + "Category", "s3f.base.project.category", name + " category", this);
+            staticInstances = new ArrayList<>();
+            data = new Data(name + "Category", "s3f.core.project.category", name + " category", this);
+        }
+
+        public void addModel(Element element) {
+            staticInstances.add(element);
         }
 
         public String getName() {
@@ -47,7 +58,11 @@ public interface Element extends Plugabble {
         }
 
         public Element getStaticInstance() {
-            return staticInstance;
+            return staticInstances.get(0);
+        }
+
+        public List<Element> getModels() {
+            return staticInstances;
         }
 
         @Override
@@ -74,8 +89,7 @@ public interface Element extends Plugabble {
     public Element load(InputStream stream);
 
     public EditorManager getEditorManager();
-    
-    @Deprecated
+
     public void setCurrentEditor(Editor editor);
 
 }

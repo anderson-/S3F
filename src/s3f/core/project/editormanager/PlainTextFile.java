@@ -6,93 +6,31 @@
 package s3f.core.project.editormanager;
 
 import java.io.InputStream;
-import javax.swing.Icon;
 import javax.swing.ImageIcon;
-import javax.swing.text.JTextComponent;
 import s3f.core.code.CodeEditorTab;
-import s3f.core.plugin.Data;
 import s3f.core.plugin.Plugabble;
-import s3f.core.project.Editor;
 import s3f.core.project.Element;
 import s3f.core.project.FileCreator;
+import s3f.core.project.SimpleElement;
 
 /**
  *
  * @author antunes
  */
-public class PlainTextFile implements Element, TextFile {
+public class PlainTextFile extends SimpleElement implements TextFile {
 
-    public static final Element PLAIN_TEXT_FILE = new PlainTextFile();
-    public static final Element.CategoryData PLAIN_TEXT_FILES = new Element.CategoryData("Plain Text", "txt", new ImageIcon(PlainTextFile.class.getResource("/resources/icons/fugue/scripts-text.png")), PLAIN_TEXT_FILE);
+    public static final Element.CategoryData PLAIN_TEXT_FILES = new Element.CategoryData("Plain Text", "txt", new ImageIcon(PlainTextFile.class.getResource("/resources/icons/fugue/scripts-text.png")), new PlainTextFile());
     private static final EditorManager EDITOR_MANAGER = new DefaultEditorManager(new CodeEditorTab());
 
-    private String name = "sss" + Math.random();
     private String text;
-    private Data data;
-
-    ImageIcon a = new ImageIcon(PlainTextFile.class.getResource("/resources/icons/fugue/document-text.png"));
 
     public PlainTextFile() {
-        data = new Data("plaintext", "s3f.base.project.element", "sei lá");
-    }
-
-    @Override
-    public String getName() {
-        return name;
-    }
-
-    @Override
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    @Override
-    public Icon getIcon() {
-        return a;
-    }
-
-    @Override
-    public Element.CategoryData getCategoryData() {
-        return PLAIN_TEXT_FILES;
-    }
-
-    @Override
-    public void save(FileCreator fileCreator) {
-        StringBuilder sb = new StringBuilder();
-        sb.append(getText());
-        fileCreator.makeTextFile(name, PLAIN_TEXT_FILES.getExtension(), sb);
-    }
-
-    @Override
-    public Element load(InputStream stream) {
-        PlainTextFile txtFile = new PlainTextFile();
-        txtFile.setText(FileCreator.convertInputStreamToString(stream));
-        return txtFile;
-    }
-
-    @Override
-    public void init() {
-
+        super("plant", "/resources/icons/fugue/document-text.png", PLAIN_TEXT_FILES, EDITOR_MANAGER);
     }
 
     @Override
     public Plugabble createInstance() {
         return new PlainTextFile();
-    }
-
-    @Override
-    public Data getData() {
-        return data;
-    }
-
-    @Override
-    public String toString() {
-        return name;
-    }
-
-    @Override
-    public EditorManager getEditorManager() {
-        return EDITOR_MANAGER;
     }
 
     @Override
@@ -104,10 +42,4 @@ public class PlainTextFile implements Element, TextFile {
     public String getText() {
         return text;
     }
-
-    @Override
-    public void setCurrentEditor(Editor editor) {
-        
-    }
-
 }

@@ -86,7 +86,7 @@ public final class Data {
         return getProperty(Data.DEPENDENCIES);
     }
 
-    public void setReference(Plugabble reference) {
+    public void setReference(Configurable reference) {
         this.reference = reference;
     }
 

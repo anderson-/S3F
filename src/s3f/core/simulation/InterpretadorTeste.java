@@ -5,11 +5,11 @@ package s3f.core.simulation;
 // * To change this template file, choose Tools | Templates
 // * and open the template in the editor.
 // */
-//package s3f.base.simulation;
+//package s3f.core.simulation;
 //
 //import java.util.*;
-//import static s3f.base.simulation.Simulator.PAUSED;
-//import static s3f.base.simulation.Simulator.RUNNING;
+//import static s3f.core.simulation.Simulator.PAUSED;
+//import static s3f.core.simulation.Simulator.RUNNING;
 //
 //public class InterpretadorTeste {
 //

@@ -3,18 +3,18 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package s3f.core.project.editormanager;
 
-import s3f.core.project.Element;
+package s3f.core.project;
+
+import java.util.List;
 
 /**
  *
  * @author antunes
  */
-public interface TextFile extends Element {
-
-    public void setText(String text);
-
-    public String getText();
-
+public class ProjectConfiguration {
+    
+    public List<String> primaryResource;
+    public List<String> secondaryResource;
+    
 }

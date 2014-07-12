@@ -7,6 +7,7 @@ package s3f.core.simulation;
 
 import java.awt.Component;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
@@ -14,7 +15,23 @@ import java.util.List;
 import javax.swing.AbstractAction;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.JCheckBoxMenuItem;
+import javax.swing.JComponent;
+import javax.swing.JLabel;
+import javax.swing.JMenuItem;
+import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
+import javax.swing.JSeparator;
+import javax.swing.JTextField;
+import javax.swing.MenuSelectionManager;
+import javax.swing.plaf.ComponentUI;
+import javax.swing.plaf.basic.BasicCheckBoxMenuItemUI;
+import s3f.core.plugin.EntityManager;
+import s3f.core.plugin.PluginManager;
+import s3f.core.plugin.SimulableElement;
+import s3f.core.project.Project;
 import s3f.core.ui.MainUI;
+import s3f.core.ui.ToolBarButton;
 import s3f.util.ColorUtils;
 
 /**
@@ -46,7 +63,52 @@ public class SimulationUtils {
 
     public static List<Component> createControlPanel(final Simulator simulator) {
         ArrayList<Component> components = new ArrayList<>();
-        final JButton playButton = MainUI.createToolbarButton(null, "ashdas\nadadsy\niasdaus", ICON_PLAY);
+
+        ToolBarButton tbb = new ToolBarButton() {
+
+            @Override
+            public JPopupMenu getJPopupMenu() {
+                JPopupMenu popup = new JPopupMenu();
+                EntityManager em = PluginManager.getInstance().createFactoryManager(null);
+                Project project = (Project) em.getProperty("s3f.core.project.tmp", "project");
+                for (s3f.core.project.Element e : project.getElements()) {
+                    if (e instanceof SimulableElement) {
+                        final SimulableElement simulableElement = (SimulableElement) e;
+                        final JCheckBoxMenuItem checkbox = new JCheckBoxMenuItem(e.getName(), e.getIcon());
+                        checkbox.setUI(new StayOpenCheckBoxMenuItemUI());
+                        checkbox.setSelected(simulator.contains(simulableElement.getSystem()));
+                        checkbox.addActionListener(new ActionListener() {
+                            @Override
+                            public void actionPerformed(ActionEvent e) {
+                                if (checkbox.isSelected()) {
+                                    simulator.add(simulableElement.getSystem());
+                                } else {
+                                    simulator.remove(simulableElement.getSystem());
+                                }
+                            }
+                        });
+
+                        popup.add(checkbox);
+                    }
+                }
+
+                popup.add(new JSeparator());
+                popup.add(new JMenuItem(new AbstractAction("Clear") {
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        simulator.clear();
+                    }
+                }));
+                JPanel p = new JPanel();
+                p.add(new JLabel("Insira Tempo:"));
+                p.add(new JTextField("123"));
+                popup.insert(p, 0);
+                return popup;
+            }
+
+        };
+
+        final JButton playButton = MainUI.createToolbarButton(tbb.getJComponent(), null, "ashdas\nadadsy\niasdaus", ICON_PLAY);
         final JButton stepButton = MainUI.createToolbarButton(null, "ashdas\nadadsy\niasdaus", ICON_STEP);
         final JButton stopButton = MainUI.createToolbarButton(null, "ashdas\nadadsy\niasdaus", ICON_STOP);
         stopButton.setEnabled(false);
@@ -107,7 +169,7 @@ public class SimulationUtils {
             });
         }
 
-        playButton.addActionListener(playAction);
+        tbb.setActionListener(playAction);
         stepButton.addActionListener(stepAction);
         stopButton.addActionListener(stopAction);
 
@@ -115,6 +177,20 @@ public class SimulationUtils {
         components.add(MainUI.addTip(stepButton, "dica :DDD"));
         components.add(MainUI.addTip(stopButton, "dica :DDD"));
         return components;
+    }
+
+    public static class StayOpenCheckBoxMenuItemUI extends BasicCheckBoxMenuItemUI {
+
+        @Override
+        protected void doClick(MenuSelectionManager msm) {
+            menuItem.doClick(0);
+        }
+
+//        @Override
+//        public static ComponentUI createUI(JComponent c) {
+//            return new StayOpenCheckBoxMenuItemUI();
+//        }
+
     }
 
 }

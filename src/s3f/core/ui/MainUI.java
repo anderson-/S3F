@@ -21,11 +21,15 @@
  */
 package s3f.core.ui;
 
+import java.awt.AlphaComposite;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.GradientPaint;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.Insets;
 import java.awt.Point;
 import java.awt.Rectangle;
@@ -34,13 +38,14 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
+import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 import javax.swing.AbstractAction;
-import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
@@ -50,9 +55,11 @@ import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JComponent;
+import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JLayer;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
@@ -66,14 +73,14 @@ import javax.swing.JTextArea;
 import javax.swing.JToolBar;
 import javax.swing.KeyStroke;
 import javax.swing.LookAndFeel;
-import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
+import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.WindowConstants;
 import javax.swing.filechooser.FileFilter;
+import javax.swing.plaf.LayerUI;
 import net.infonode.docking.DockingWindow;
-import net.infonode.docking.DockingWindowListener;
-import net.infonode.docking.OperationAbortedException;
+import net.infonode.docking.DockingWindowAdapter;
 import net.infonode.docking.RootWindow;
 import net.infonode.docking.SplitWindow;
 import net.infonode.docking.TabWindow;
@@ -88,21 +95,25 @@ import net.infonode.docking.theme.LookAndFeelDockingTheme;
 import net.infonode.docking.theme.ShapedGradientDockingTheme;
 import net.infonode.docking.theme.SlimFlatDockingTheme;
 import net.infonode.docking.theme.SoftBlueIceDockingTheme;
+import net.infonode.docking.util.DockingUtil;
 import net.infonode.docking.util.PropertiesUtil;
 import net.infonode.gui.laf.InfoNodeLookAndFeel;
-import net.infonode.gui.panel.SimplePanel;
+import net.infonode.gui.laf.InfoNodeLookAndFeelTheme;
+import net.infonode.util.Direction;
 import s3f.core.plugin.Configurable;
+import s3f.core.plugin.ConfigurableObject;
 import s3f.core.plugin.Data;
 import s3f.core.plugin.EntityManager;
 import s3f.core.plugin.Extensible;
 import s3f.core.plugin.PluginManager;
+import s3f.core.project.Element;
 import s3f.core.project.Project;
 import s3f.core.project.ProjectTreeTab;
 import s3f.core.script.MyJSConsole;
 import s3f.core.script.ScriptEnvironment;
 import s3f.core.simulation.SimulationUtils;
-import static s3f.core.simulation.SimulationUtils.createTestSimulator;
 import s3f.core.simulation.Simulator;
+import s3f.core.ui.tab.MessageTab;
 import s3f.core.ui.tab.Tab;
 import s3f.core.ui.tab.TabProperty;
 import s3f.util.ColorUtils;
@@ -132,6 +143,7 @@ public class MainUI implements Extensible {
     private AbstractAction saveProject;
     private AbstractAction createAndShowTerminal;
     private AbstractAction createAndShowConfigurationWindow;
+    private AbstractAction setLocaleWindow;
     private TabWindow firstTabWindow;
     private TabWindow secondTabWindow;
     private TabWindow thirdTabWindow;
@@ -140,12 +152,14 @@ public class MainUI implements Extensible {
     private Project project;
     private ProjectTreeTab projectTreeTab;
     private int toolbarHeight = 35;
+    private boolean end = false;
 
     private MainUI() {
         createActions();
         createUI();
         addKeyBindings();
         init();
+        end = true;
     }
 
     public static MainUI getInstance() {
@@ -157,12 +171,10 @@ public class MainUI implements Extensible {
 
     private void init() {
         PluginManager pm = PluginManager.getInstance();
-        pm.registerFactory(new GUIBuilder("tmp") {
-            @Override
-            public void init() {
-            }
-        });
         pm.createFactoryManager(this);
+        ConfigurableObject o = new ConfigurableObject("s3f.core.project");
+        o.getData().setProperty("project", project);
+        pm.registerFactory(o);
     }
 
     private void createActions() {
@@ -170,7 +182,10 @@ public class MainUI implements Extensible {
             @Override
             public void actionPerformed(ActionEvent e) {
                 if (terminal == null) {
+                    PrintStream out = System.out;
+                    out.println("ter");
                     terminal = new MyJSConsole(ScriptEnvironment.getVariables(), ScriptEnvironment.getFunctions());
+                    out.println("done");
                 }
 
 //                {
@@ -189,7 +204,7 @@ public class MainUI implements Extensible {
 //                                null, //new Dimension(300, 200),
 //                                new View(terminal.getTitle(), null, terminal.getRootPane())
 //                        );
-                        View view = new View(terminal.getTitle(), null, terminal.getRootPane());
+                        final View view = new View(terminal.getTitle(), null, terminal.getRootPane());
                         addView(1, view);
                         view.undock(new Point((screen.width - frame.width) / 2, (screen.height - frame.height) / 2));
 
@@ -210,9 +225,46 @@ public class MainUI implements Extensible {
             }
         };
 
+        newDocument = new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                Object[] o = NewFileDialog.createNewFileDialog();
+                if (o[0] != null && o[1] != null) {
+                    Element el = (Element) o[0];
+                    String name = o[1].toString();
+                    el = (Element) el.createInstance();
+                    el.setName(name);
+                    project.addElement(el);
+                    projectTreeTab.createElement(el);
+                }
+            }
+        };
+
         newProject = new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
+                for (Element el : new ArrayList<>(project.getElements())) {
+                    projectTreeTab.deleteElement(el);
+                }
+            }
+        };
+
+        setLocaleWindow = new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                JOptionPane pane = new JOptionPane("Restart aplication with new locale:", JOptionPane.QUESTION_MESSAGE, JOptionPane.OK_CANCEL_OPTION, new ImageIcon(getClass().getResource("/resources/icons/fugue-24/globe-green.png")), new String[]{"Restart", "Cancel"}, null);
+                pane.setWantsInput(true);
+                pane.setInitialSelectionValue("pt_BR");
+                final JDialog dialog = pane.createDialog(window, "Set Locale");
+                dialog.setVisible(true);
+                dialog.dispose();
+                String locale = (String) pane.getInputValue();
+                if (locale != null && !locale.isEmpty()) {
+                    int returnVal = JOptionPane.showConfirmDialog(window, "O projeto atual será fechado, deseja prosseguir?", "Reiniciar", JOptionPane.YES_NO_OPTION);
+                    if (returnVal == JOptionPane.YES_OPTION) {
+                        s3f.S3F.restartApplication("--lang=" + locale);
+                    }
+                }
             }
         };
 
@@ -271,6 +323,9 @@ public class MainUI implements Extensible {
 
                     project.load(file.getAbsolutePath());
                     projectTreeTab.update();
+                    for (Element el : project.getElements()) {
+                        projectTreeTab.createElement(el);
+                    }
                 }
             }
         };
@@ -341,6 +396,7 @@ public class MainUI implements Extensible {
         //docking windows
         rootWindow = new RootWindow(null);
         rootWindow.setBorder(null);
+        rootWindow.getWindowBar(Direction.DOWN).setEnabled(true);
         properties.addSuperObject(currentTheme.getRootWindowProperties());
         rootWindow.getRootWindowProperties().addSuperObject(properties);
         // Add a mouse button listener that closes a window when it's clicked with the middle mouse button.
@@ -350,6 +406,7 @@ public class MainUI implements Extensible {
         //ProjectTree & Console
         project = new Project("Projeto");
         projectTreeTab = new ProjectTreeTab(project);
+
         View projectTreeView = new View(
                 (String) projectTreeTab.getData().getProperty(TabProperty.TITLE),
                 (Icon) projectTreeTab.getData().getProperty(TabProperty.ICON),
@@ -373,105 +430,39 @@ public class MainUI implements Extensible {
         secondTabWindow.addTab(projectTreeView);
         View consoleView = new View("Console", null, new JScrollPane(console));
         thirdTabWindow = new TabWindow();
+        DockingWindow messageDW = addView(3, new MessageTab());
         thirdTabWindow.addTab(consoleView);
 
         SplitWindow leftSplitWindow = new SplitWindow(false, .5f, secondTabWindow, thirdTabWindow);
 
         firstTabWindow = new TabWindow();
-        firstTabWindow.addListener(new DockingWindowListener() {
-
+        //evita que firstTabWindow seja fechada quando ficar vazia
+        firstTabWindow.addListener(new DockingWindowAdapter() {
             @Override
-            public void windowAdded(DockingWindow dw, DockingWindow dw1) {
-
-            }
-
-            @Override
-            public void windowRemoved(DockingWindow dw, DockingWindow dw1) {
-
-            }
-
-            @Override
-            public void windowShown(DockingWindow dw) {
-
-            }
-
-            @Override
-            public void windowHidden(DockingWindow dw) {
-
-            }
-
-            @Override
-            public void viewFocusChanged(View view, View view1) {
-
-            }
-
-            @Override
-            public void windowClosing(DockingWindow dw) throws OperationAbortedException {
-                if (firstTabWindow.getChildWindowCount() == 1) {
-                    throw new OperationAbortedException();
+            public void windowRemoved(final DockingWindow dw, DockingWindow dw1) {
+                if (dw1 == firstTabWindow && !dw1.isShowing()) {
+//                    System.out.println("~" + dw1.getParent());
+                    dw.split(firstTabWindow, Direction.RIGHT, .2f);
                 }
             }
-
-            @Override
-            public void windowClosed(DockingWindow dw) {
-
-            }
-
-            @Override
-            public void windowUndocking(DockingWindow dw) throws OperationAbortedException {
-
-            }
-
-            @Override
-            public void windowUndocked(DockingWindow dw) {
-
-            }
-
-            @Override
-            public void windowDocking(DockingWindow dw) throws OperationAbortedException {
-
-            }
-
-            @Override
-            public void windowDocked(DockingWindow dw) {
-
-            }
-
-            @Override
-            public void windowMinimizing(DockingWindow dw) throws OperationAbortedException {
-
-            }
-
-            @Override
-            public void windowMinimized(DockingWindow dw) {
-
-            }
-
-            @Override
-            public void windowMaximizing(DockingWindow dw) throws OperationAbortedException {
-
-            }
-
-            @Override
-            public void windowMaximized(DockingWindow dw) {
-
-            }
-
-            @Override
-            public void windowRestoring(DockingWindow dw) throws OperationAbortedException {
-
-            }
-
-            @Override
-            public void windowRestored(DockingWindow dw) {
-
-            }
-
         });
 
         SplitWindow firstSplitWindow = new SplitWindow(true, .2f, leftSplitWindow, firstTabWindow);
         rootWindow.setWindow(firstSplitWindow);
+        messageDW.minimize();
+        messageDW.getWindowProperties().setUndockEnabled(false);
+        messageDW.getWindowProperties().setRestoreEnabled(false);
+        messageDW.getWindowProperties().setCloseEnabled(false);
 
+        projectTreeView.getWindowProperties().setMaximizeEnabled(false);
+        consoleView.getWindowProperties().setMaximizeEnabled(false);
+        projectTreeView.getWindowProperties().setUndockEnabled(false);
+        consoleView.getWindowProperties().setUndockEnabled(false);
+        projectTreeView.getWindowProperties().setCloseEnabled(false);
+        consoleView.getWindowProperties().setCloseEnabled(false);
+
+//        lockView(projectTreeView);
+//        lockView(consoleView);
         lockView(firstTabWindow);
         lockView(secondTabWindow);
         lockView(thirdTabWindow);
@@ -511,11 +502,11 @@ public class MainUI implements Extensible {
 ////                    SwingUtilities.invokeLater(new Runnable() {
 ////                        @Override
 ////                        public void run() {
-//                                final BufferedImage bi = new BufferedImage(500, 500, BufferedImage.TYPE_INT_RGB);
+//                                final BufferedImage bi = new BufferedImage(180, 120, BufferedImage.TYPE_INT_RGB);
 //
-//                                SwingUtilities.updateComponentTreeUI(window);
+//                                SwingUtilities.updateComponentTreeUI(window.getContentPane());
 //                                firstTabWindow.setVisible(false);
-//                                window.printAll(bi.getGraphics());
+//                                window.getContentPane().printAll(bi.getGraphics());
 //
 //                                JPanel p = new JPanel() {
 //                                    @Override
@@ -531,7 +522,7 @@ public class MainUI implements Extensible {
 ////                                public void run() {
 //                                try {
 //                                    UIManager.setLookAndFeel(lookAndFeel);
-//                                    SwingUtilities.updateComponentTreeUI(window);
+//                                    SwingUtilities.updateComponentTreeUI(window.getContentPane());
 //                                } catch (UnsupportedLookAndFeelException ex) {
 //
 //                                }
@@ -552,6 +543,9 @@ public class MainUI implements Extensible {
         statusLabel = new JLabel();
         statusBar.setFloatable(false);
         statusBar.setRollover(true);
+        JButton button = createToolbarButton(setLocaleWindow, null, "/resources/icons/fugue/globe-green.png");
+        button.setMargin(new Insets(-3, 2, -3, 2));
+        statusBar.add(addTip(button, "Set application language. Current locale: " + PluginManager.LOCALE.toString()));
         helpCheckBox = new JCheckBox();
         helpCheckBox.setSelected(true);
         helpCheckBox.setToolTipText("Selecione para dicas");
@@ -564,7 +558,7 @@ public class MainUI implements Extensible {
             }
         });
         helpCheckBox.setBorder(null);
-        statusBar.add(helpCheckBox);
+        statusBar.add(addTip(helpCheckBox, "ashdasdgasd"));
         statusBar.add(Box.createHorizontalStrut(3));
 
         statusLabel.setText(PluginManager.getText("s3f.statusbar.welcome"));
@@ -572,6 +566,26 @@ public class MainUI implements Extensible {
 
         window.getContentPane().add(statusBar, BorderLayout.SOUTH);
 
+        //teste desenhar em cima de tudo
+//        LayerUI<JComponent> layerUI = new LayerUI<JComponent>() {
+//            @Override
+//            public void paint(java.awt.Graphics g, JComponent c) {
+//                super.paint(g, c);
+//
+//                Graphics2D g2 = (Graphics2D) g.create();
+//
+//                int w = c.getWidth();
+//                int h = c.getHeight();
+//                g2.setComposite(AlphaComposite.getInstance(
+//                        AlphaComposite.SRC_OVER, .5f));
+//                g2.setPaint(new GradientPaint(0, 0, Color.yellow, 0, h, Color.red));
+//                g2.fillRect(0, 0, w, h);
+//
+//                g2.dispose();
+//            }
+//        };
+//        JLayer<JComponent> jlayer = new JLayer<>((JComponent) window.getContentPane(), layerUI);
+//        window.setContentPane(jlayer);
         //finaliza
         window.pack();
     }
@@ -602,11 +616,15 @@ public class MainUI implements Extensible {
 
     public static JButton createToolbarButton(AbstractAction action, String tooltip, ImageIcon icon) {
         JButton button = new JButton();
+        return createToolbarButton(button, action, tooltip, icon);
+    }
+
+    public static JButton createToolbarButton(JButton button, AbstractAction action, String tooltip, ImageIcon icon) {
 
         button.setIcon(icon);
         button.setRolloverEnabled(true);
         button.setRolloverIcon(new ImageIcon(ColorUtils.imageHSBAchange(icon.getImage(), 0, 0, .1f, 0)));
-        if (!tooltip.isEmpty()) {
+        if (tooltip != null && !tooltip.isEmpty()) {
             if (tooltip.contains("\n")) {
                 tooltip = "<html>" + tooltip.replace("\n", "<p>") + "</html>";
             }
@@ -616,9 +634,11 @@ public class MainUI implements Extensible {
         button.setMargin(new Insets(3, 3, 3, 3));
         button.setFocusable(false);
         //button.setText("text");
-        button.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
-        button.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
-        button.addActionListener(action);
+//        button.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
+//        button.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
+        if (button.getClass() == JButton.class) {
+            button.addActionListener(action);
+        }
         return button;
     }
 
@@ -638,7 +658,7 @@ public class MainUI implements Extensible {
         }
     }
 
-    public void addView(int order, DockingWindow view) {
+    public DockingWindow addView(int order, DockingWindow view) {
         TabWindow tw;
         switch (order) {
             case 1:
@@ -653,10 +673,17 @@ public class MainUI implements Extensible {
             default:
                 tw = firstTabWindow;
         }
+        if (tw.getParent() == null && end) {
+//            DockingUtil.addWindow(view, rootWindow);
+            //rootWindow.split(view, Direction.LEFT, .2f);
+            return view;
+        }
+
         tw.addTab(view);
+        return view;
     }
 
-    public void addView(int order, Configurable obj) {
+    public DockingWindow addView(int order, Configurable obj) {
         Component component = (Component) obj.getData().getProperty(TabProperty.COMPONENT);
         View view = new View(
                 (String) obj.getData().getProperty(TabProperty.TITLE),
@@ -666,7 +693,7 @@ public class MainUI implements Extensible {
         if (component instanceof ComponentListener) {
             view.addComponentListener((ComponentListener) component);
         }
-        addView(order, view);
+        return addView(order, view);
     }
 
     public static <T> T componentSearch(Component component, Class c, boolean print) {
@@ -693,18 +720,14 @@ public class MainUI implements Extensible {
     public void selectComponent(Component component) {
         //encontra View a partir de component
         View view = componentSearch(component, View.class, false);
-        //encontra TabWindow a partir de view
-        TabWindow tabWindow = componentSearch(view, TabWindow.class, false);
-        if (view != null && tabWindow != null) {
-            int index = tabWindow.getChildWindowIndex(view);
-            if (index >= 0) {
-                tabWindow.setSelectedTab(index);
-            }
+        if (view != null) {
+            view.makeVisible();
         }
     }
 
     private void lockView(DockingWindow dw) {
         dw.getWindowProperties().setMaximizeEnabled(false);
+        dw.getWindowProperties().setMinimizeEnabled(false);
         dw.getWindowProperties().setUndockEnabled(false);
         dw.getWindowProperties().setCloseEnabled(false);
     }
@@ -746,7 +769,8 @@ public class MainUI implements Extensible {
         themesMenu.add(titleBarStyleItem);
         themesMenu.add(new JSeparator());
 
-        DockingWindowsTheme[] themes = {new DefaultDockingTheme(),
+        DockingWindowsTheme[] themes = {
+            new DefaultDockingTheme(),
             new LookAndFeelDockingTheme(),
             new BlueHighlightDockingTheme(),
             new SlimFlatDockingTheme(),
@@ -802,7 +826,7 @@ public class MainUI implements Extensible {
 //                    }
 //                }
 //            }
-            UIManager.setLookAndFeel(createLookAndFeel(RandomColor.generate(.3f, .8f)));
+            UIManager.setLookAndFeel(createLookAndFeel(RandomColor.generate(.4f, .8f)));
 
 //            InfoNodeLookAndFeelTheme theme
 //                    = new InfoNodeLookAndFeelTheme("My Theme",
@@ -882,7 +906,6 @@ public class MainUI implements Extensible {
             for (Data d : factoriesData) {
                 if (d != null && d.getReference() instanceof GUIBuilder) {
                     GUIBuilder gb = (GUIBuilder) d.getReference();
-                    System.out.println(gb.data.getName());
                     gb.init();
                     builder.append(gb);
                 }
@@ -909,7 +932,7 @@ public class MainUI implements Extensible {
                 tmpWidth += c.getPreferredSize().width;
             }
 
-            {//teste
+            {//controles do simulador
                 toolBarPanel.add(builder.separator());
                 for (Component c : SimulationUtils.createControlPanel((Simulator) em.getProperty("s3f.core.interpreter.tmp", "interpreter"))) {
                     toolBarPanel.add(c);
@@ -918,10 +941,12 @@ public class MainUI implements Extensible {
             }
 
             final JPanel p = new JPanel();
+//            p.setBackground(Color.red);
             p.setSize(new Dimension(50, toolbarHeight));
             toolBarPanel.add(p);
 
             for (Component o : builder.getToolbarComponents(false, 500)) {
+                System.out.println("*");
                 toolBarPanel.add(o);
                 tmpWidth += o.getPreferredSize().width;
             }
@@ -932,7 +957,7 @@ public class MainUI implements Extensible {
             componentListener = new ComponentListener() {
                 @Override
                 public void componentResized(ComponentEvent e) {
-                    p.setPreferredSize(new Dimension(window.getWidth() - width - 2, toolbarHeight));
+                    p.setPreferredSize(new Dimension(window.getWidth() - width - 200, toolbarHeight));
                     toolBarPanel.updateUI();
                 }
 

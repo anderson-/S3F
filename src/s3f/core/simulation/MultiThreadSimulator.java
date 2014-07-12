@@ -51,13 +51,13 @@ public class MultiThreadSimulator implements Simulator {
         @Override
         public void run() {
             while (true) {
-                if (step) {
-                    step = false;
+                if (step && system != null) {
                     stepStatus = system.performStep();
+                    step = false;
                 } else {
                     //dormindo
                     try {
-                        Thread.sleep(1);
+                        Thread.sleep(10);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
@@ -112,12 +112,48 @@ public class MultiThreadSimulator implements Simulator {
     public int getSystemState() {
         return state;
     }
+    
+    @Override
+    public boolean contains(System s){
+        return systems.contains(s);
+    }
 
     @Override
     public void add(System s) {//134691220
         if (!systems.contains(s)) {
             systems.add(s);
+            for (StepDispatchThread t : pool) {
+                if (t.getSystem() == null) {
+                    t.setSystem(s);
+                    return;
+                }
+            }
             pool.add(new StepDispatchThread(s));
+        }
+    }
+
+    @Override
+    public void remove(System s) {
+        if (systems.contains(s)) {
+            s.reset();
+            for (StepDispatchThread t : pool) {
+                if (t.getSystem() == s) {
+                    t.reset();
+                    t.setSystem(null);
+                }
+            }
+            systems.remove(s);
+        }
+    }
+
+    @Override
+    public void clear() {
+        for (System s : systems) {
+            s.reset();
+        }
+        for (StepDispatchThread t : pool) {
+            t.reset();
+            t.setSystem(null);
         }
     }
 
@@ -169,7 +205,6 @@ public class MultiThreadSimulator implements Simulator {
         performStep();
 
 //        java.lang.System.out.println("step");
-
 //        java.lang.System.out.println("k:" + k);
 //        java.lang.System.out.println("TEMPO DO PASSO: " + (java.lang.System.currentTimeMillis() - time) + "ms.");
         support.firePropertyChange(PROPERTY_STEP, null, PROPERTY_STEP_END);

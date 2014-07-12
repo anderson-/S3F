@@ -32,6 +32,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -40,6 +41,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.ResourceBundle;
 import java.util.TreeMap;
+import s3f.S3F;
 import s3f.core.project.FileCreator;
 import s3f.core.script.ScriptManager;
 import s3f.util.fommil.jni.JniNamer;
@@ -47,8 +49,42 @@ import s3f.util.toml.impl.Toml;
 
 public class PluginManager {
 
+    public static Locale LOCALE = Locale.getDefault();//new Locale("pt", "BR");
+    private static Class mainClass = null;
+    
     private static PluginManager PLUGIN_MANAGER = null;
-    public static boolean LOCAL = false;
+
+    public static Class getMainClass(){
+        if (mainClass == null){
+            mainClass = S3F.class;
+        }
+        return mainClass;
+    }
+    
+    public static PluginManager getInstance(String[] args, Class mainClass) {
+        PluginManager.mainClass = mainClass;
+        for (String arg : args) {
+            if (arg.startsWith("--lang=")) {
+                String loc = arg.substring(arg.indexOf("=") + 1);
+                String lang = null;
+                String reg = null;
+                String var = null;
+                for (String s : loc.split("_")) {
+                    if (lang == null) {
+                        lang = s;
+                    } else if (reg == null) {
+                        reg = s;
+                    } else if (var == null) {
+                        var = s;
+                    }
+                }
+                Locale.Builder builder = new Locale.Builder();
+                builder.setLanguage(lang).setRegion(reg).setVariant(var);
+                LOCALE = builder.build();
+            }
+        }
+        return getInstance();
+    }
 
     public static PluginManager getInstance() {
         if (PLUGIN_MANAGER == null) {
@@ -108,7 +144,7 @@ public class PluginManager {
         entityManager = new EntityManager(entityTreeRoot);
         pluginList = new ArrayList<>();
         bundleMap = new HashMap<>();
-        defaultBundle = ResourceBundle.getBundle("s3f.lang.lang", new Locale("pt", "BR"), this.getClass().getClassLoader());
+        defaultBundle = ResourceBundle.getBundle("s3f.lang.lang", LOCALE, this.getClass().getClassLoader());
 //        Locale l = new Locale("pt", "BR");
 //        defaultBundle = null;
 //        try {
@@ -143,7 +179,7 @@ public class PluginManager {
 
         ArrayList<String> pluginPaths = new ArrayList<>();
 
-        if (classRunningPath.endsWith(".jar") && !LOCAL) {
+        if (classRunningPath.endsWith(".jar")) {
             int i = classRunningPath.lastIndexOf('/');
             classRunningPath = classRunningPath.substring(0, i);
 
@@ -366,9 +402,7 @@ public class PluginManager {
      *
      * @param pathToConfigPOJO
      * @param loader
-     * @deprecated
      */
-    @Deprecated
     public void loadSoftPlugin(String pathToConfigPOJO, ClassLoader loader) {
         if (loader == null) {
             loader = ClassLoader.getSystemClassLoader();
@@ -470,6 +504,7 @@ public class PluginManager {
             return true;
         } catch (Error | Exception e) {
             try {
+                System.out.println("lendo biblioteca do sistema");
                 setLibraryPath(defaultPath);
                 return loadNativeLib(libName);
             } catch (Exception e2) {
@@ -500,7 +535,7 @@ public class PluginManager {
         pluginList.add(cfg);
         //internacionalização
         if (cfg.langFolder != null) {
-            bundleMap.put(cfg.name, ResourceBundle.getBundle(cfg.langFolder + ".lang", new Locale("pt", "BR"), loader));
+            bundleMap.put(cfg.name, ResourceBundle.getBundle(cfg.langFolder + ".lang", LOCALE, loader));
         }
 
         if (cfg.nativeLibs != null) {
@@ -509,7 +544,9 @@ public class PluginManager {
             path += "natives/" + JniNamer.os() + "/" + JniNamer.arch();
 
             for (String nativeLib : cfg.nativeLibs) {
-                loadNativeLib(nativeLib, path);
+                if (!loadNativeLib(nativeLib, path)) {
+                    System.out.println("erro ao carregar biblioteca:" + nativeLib);
+                }
             }
         }
 
@@ -556,20 +593,6 @@ public class PluginManager {
             }
         } catch (ClassNotFoundException | IllegalAccessException | InstantiationException | NullPointerException ex) {
             ex.printStackTrace();
-        } finally {
-            /*  
-             Proximas linhas ao serem executadas pelo netbeans geram:
-             - java.lang.ClassNotFoundException
-             - java.lang.NoClassDefFoundError
-             */
-//            if (loader instanceof URLClassLoader) {
-//                try {
-//                    URLClassLoader urlClassLoader = (URLClassLoader) loader;
-//                    urlClassLoader.close();
-//                } catch (IOException ex) {
-//                    ex.printStackTrace();
-//                }
-//            }
         }
     }
 

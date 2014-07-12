@@ -25,4 +25,10 @@ public interface Simulator extends Runnable, System {
 
     public void add(System s);
 
+    public void clear();
+
+    public void remove(System system);
+
+    public boolean contains(System system);
+
 }

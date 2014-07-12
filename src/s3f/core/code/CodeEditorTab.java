@@ -21,13 +21,18 @@
  */
 package s3f.core.code;
 
-import java.awt.*;
+import java.awt.Color;
+import java.awt.Component;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
-import javax.swing.*;
+import javax.swing.ImageIcon;
+import javax.swing.KeyStroke;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
-import org.fife.ui.autocomplete.*;
+import org.fife.ui.autocomplete.AutoCompletion;
+import org.fife.ui.autocomplete.BasicCompletion;
+import org.fife.ui.autocomplete.Completion;
+import org.fife.ui.autocomplete.DefaultCompletionProvider;
 import org.fife.ui.rsyntaxtextarea.AbstractTokenMakerFactory;
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 import org.fife.ui.rsyntaxtextarea.Style;
@@ -36,15 +41,17 @@ import org.fife.ui.rsyntaxtextarea.TokenMaker;
 import org.fife.ui.rsyntaxtextarea.TokenMakerFactory;
 import org.fife.ui.rsyntaxtextarea.TokenMap;
 import org.fife.ui.rtextarea.RTextScrollPane;
-import s3f.core.plugin.Configurable;
 import s3f.core.plugin.Data;
 import s3f.core.plugin.EntityManager;
 import s3f.core.plugin.Plugabble;
+import s3f.core.plugin.PluginManager;
 import s3f.core.project.Editor;
 import s3f.core.project.Element;
 import s3f.core.project.ProjectTreeTab;
 import s3f.core.project.editormanager.TextFile;
+import s3f.core.script.JSInterpreter;
 import s3f.core.script.Script;
+import s3f.core.simulation.Simulator;
 import s3f.core.ui.tab.TabProperty;
 
 public class CodeEditorTab implements Editor {
@@ -113,7 +120,7 @@ public class CodeEditorTab implements Editor {
         //ac.setAutoCompleteSingleChoices(true);
         autoCompletion.install(textArea);
 
-        data = new Data("editorTab", "s3f.base.code", "Editor Tab");
+        data = new Data("editorTab", "s3f.core.code", "Editor Tab");
         tabComponent = new RTextScrollPane(textArea);
         TabProperty.put(data, "Editor", ICON, "Editor de código", tabComponent);
     }
@@ -286,8 +293,6 @@ public class CodeEditorTab implements Editor {
                 }
             });
             
-            content.setCurrentEditor(this);
-            
             switch (content.getCategoryData().getExtension()) {
                 case "js":
                     setLanguage("javascript");
@@ -296,8 +301,8 @@ public class CodeEditorTab implements Editor {
                     setLanguage("plain");
                     break;
             }
-
-            TabProperty.put(data, content.getName(), ICON, "Editor de código", tabComponent);
+            data.setProperty(TabProperty.TITLE, content.getName());
+            data.setProperty(TabProperty.ICON, content.getIcon());
         }
     }
 

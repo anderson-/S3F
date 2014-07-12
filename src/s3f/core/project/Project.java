@@ -36,6 +36,7 @@ import java.util.zip.ZipOutputStream;
 import s3f.core.plugin.PluginManager;
 import s3f.core.project.Element.CategoryData;
 import s3f.core.ui.tab.Tab;
+import s3f.util.toml.impl.Toml;
 //import robotinterface.algorithm.parser.Parser;
 
 /**
@@ -49,9 +50,11 @@ public class Project {
     private String name;
 //    private final ArrayList<Program> programs = new ArrayList<>();
     //private final Interpreter interpreter;
+    private ProjectConfiguration projectConfiguration;
 
     public Project(String name) {
         this.name = name;
+        projectConfiguration = new ProjectConfiguration();
         //this.interpreter = new Interpreter();
     }
 
@@ -64,11 +67,28 @@ public class Project {
     }
 
     public void addElement(Element element) {
-        elements.add(element);
+        if (!elements.contains(element)) {
+            elements.add(element);
+        }
+    }
+
+    private Element getElement(String path) {
+        String category = path.substring(0, path.indexOf('/'));
+        String eName = path.substring(path.indexOf('/') + 1);
+        for (Element element : getElements(category)) {
+            if (element.getName().equals(eName)) {
+                return element;
+            }
+        }
+        return null;
     }
 
     void deleteElement(Element element) {
         elements.remove(element);
+    }
+
+    public Collection<Element> getElements() {
+        return elements;
     }
 
     public Collection<Element> getElements(String category) {
@@ -110,7 +130,7 @@ public class Project {
             File file;
             FileCreator fileCreator = FileCreator.getInstance();
 
-            List<Element.CategoryData> categories = PluginManager.getInstance().createFactoryManager(null).getEntities("s3f.base.project.category.*", Element.CategoryData.class);
+            List<Element.CategoryData> categories = PluginManager.getInstance().createFactoryManager(null).getEntities("s3f.core.project.category.*", Element.CategoryData.class);
             for (CategoryData category : categories) {
                 addFolderToZip("", category.getName(), zip);
 
@@ -121,16 +141,15 @@ public class Project {
                         file = fileCreator.getFile();
                         if (file != null) {
                             addFileToZip(category.getName(), file, zip, false);
+                            file.delete();
                         }
-                        file.delete();
-
                     } catch (Exception e) {
                         //do stuff with exception
                         e.printStackTrace();
                     }
                 }
-
             }
+            saveConfiurationFile(fileCreator, zip);
 
             /*
              * close the zip objects
@@ -231,22 +250,26 @@ public class Project {
 
             while (entries.hasMoreElements()) {
                 ZipEntry entry = entries.nextElement();
+                String entryName = entry.getName();
 
-                InputStream stream = zipFile.getInputStream(entry);
-
-                List<Element.CategoryData> categories = PluginManager.getInstance().createFactoryManager(null).getEntities("s3f.base.project.category.*", Element.CategoryData.class);
-                for (CategoryData category : categories) {
-                    String name = entry.getName();
-                    if (name.startsWith(category.getName() + "/")
-                            && name.endsWith(category.getExtension())) {
-                        Element element = category.getStaticInstance().load(stream);
-                        if (element != null) {
-                            System.out.println("new");
-                            name = name.substring(name.indexOf("/") + 1, name.lastIndexOf("."));
-                            element.setName(name);
-                            addElement(element);
+                if (entryName.startsWith("project/") && entryName.endsWith("toml")) {
+                    InputStream stream = zipFile.getInputStream(entry);
+                    loadConfigurationFile(stream);
+                } else {
+                    List<Element.CategoryData> categories = PluginManager.getInstance().createFactoryManager(null).getEntities("s3f.core.project.category.*", Element.CategoryData.class);
+                    for (CategoryData category : categories) {
+                        if (entryName.startsWith(category.getName() + "/")
+                                && entryName.endsWith(category.getExtension())) {
+                            InputStream stream = zipFile.getInputStream(entry);
+                            Element element = category.getStaticInstance().load(stream);
+                            if (element != null) {
+                                System.out.println("new");
+                                entryName = entryName.substring(entryName.indexOf("/") + 1, entryName.lastIndexOf("."));
+                                element.setName(entryName);
+                                addElement(element);
+                            }
+                            break;
                         }
-                        break;
                     }
                 }
             }
@@ -260,5 +283,57 @@ public class Project {
         Project p = new Project("nil");
         p.load(path);
         return p;
+    }
+
+    private void loadConfigurationFile(InputStream stream) {
+        String str = FileCreator.convertInputStreamToString(stream);
+        Toml toml = Toml.parse(str);
+        projectConfiguration = toml.getAs("project", ProjectConfiguration.class);
+
+        if (projectConfiguration.primaryResource != null) {
+            for (int i = 0; i < projectConfiguration.primaryResource.size(); i++) {
+                Element e1 = getElement(projectConfiguration.primaryResource.get(i));
+                if (e1 instanceof ExtensibleElement) {
+                    ExtensibleElement ex = (ExtensibleElement) e1;
+                    Element e2 = getElement(projectConfiguration.secondaryResource.get(i));
+                    if (e2 != null) {
+                        ex.addResource(new Resource(ex, e2));
+                    }
+                }
+            }
+        }
+    }
+
+    private void saveConfiurationFile(FileCreator fileCreator, ZipOutputStream zip) {
+        {//fill projectConfiguration
+            projectConfiguration.primaryResource = new ArrayList<>();
+            projectConfiguration.secondaryResource = new ArrayList<>();
+
+            for (Element e : elements) {
+                if (e instanceof ExtensibleElement) {
+                    ExtensibleElement ex = (ExtensibleElement) e;
+                    for (Resource r : ex.getResources()) {
+                        projectConfiguration.primaryResource.add(r.getPrimary().getCategoryData().getName() + "/" + r.getPrimary().getName());
+                        projectConfiguration.secondaryResource.add(r.getSecondary().getCategoryData().getName() + "/" + r.getSecondary().getName());
+                    }
+                }
+            }
+        }
+        try {
+            fileCreator.setFile(null);
+            {
+                StringBuilder sb = new StringBuilder();
+                sb.append(Toml.serialize("project", projectConfiguration));
+                fileCreator.makeTextFile("conf", "toml", sb);
+            }
+            File file = fileCreator.getFile();
+            if (file != null) {
+                addFileToZip("project", file, zip, false);
+                file.delete();
+            }
+        } catch (Exception e) {
+            //do stuff with exception
+            e.printStackTrace();
+        }
     }
 }

@@ -16,7 +16,6 @@ import java.util.HashMap;
 import java.util.List;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
-import javax.swing.JDialog;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
@@ -72,13 +71,13 @@ public class ProjectTreeTab implements Tab, Extensible {
         //update content
         setProject(project);
 
-        data = new Data("projectTreeTab", "s3f.base.project", "ProjectTreeTab");
+        data = new Data("projectTreeTab", "s3f.core.project", "ProjectTreeTab");
         TabProperty.put(data, "Projeto", null, "Informações sobre o projeto atual", treeView);
 
         createUI();
     }
 
-    private void createElement(final Element.CategoryData category) {
+    public void createElement(final Element.CategoryData category) {
         final Element element = (Element) category.getStaticInstance().createInstance();
 
         SwingUtilities.invokeLater(new Runnable() {
@@ -103,12 +102,12 @@ public class ProjectTreeTab implements Tab, Extensible {
         });
     }
 
-    private void createElement(Element element) {
+    public void createElement(Element element) {
         Editor editor = (Editor) element.getEditorManager().getDefaultEditor().createInstance();
         createElement(element, editor);
     }
 
-    private void createElement(Element element, Editor editor) {
+    public void createElement(Element element, Editor editor) {
         Editor openEditor = openEditors.get(element);
         if (openEditor != null) {
             Component component = openEditor.getData().getProperty(TabProperty.COMPONENT);
@@ -134,7 +133,8 @@ public class ProjectTreeTab implements Tab, Extensible {
             }
         } else {
             editor.setContent(element);
-
+            editor.update();
+            element.setCurrentEditor(editor);
             openEditors.put(element, editor);
             MainUI.getInstance().addView(1, editor);
         }
@@ -175,7 +175,7 @@ public class ProjectTreeTab implements Tab, Extensible {
 
                             if (dmtn.getUserObject() instanceof Project) {
                                 JPopupMenu menu = new JPopupMenu();
-                                List<Element.CategoryData> entities = PluginManager.getInstance().createFactoryManager(null).getEntities("s3f.base.project.category.*", Element.CategoryData.class);
+                                List<Element.CategoryData> entities = PluginManager.getInstance().createFactoryManager(null).getEntities("s3f.core.project.category.*", Element.CategoryData.class);
                                 for (final Element.CategoryData c : entities) {
                                     JMenuItem item = new JMenuItem(c.getName());
                                     item.addActionListener(new ActionListener() {
@@ -194,6 +194,20 @@ public class ProjectTreeTab implements Tab, Extensible {
                                     menu.add(item);
                                 }
 
+                                menu.show(tree, pathBounds.x, pathBounds.y + pathBounds.height);
+                            } else if (dmtn.getUserObject() instanceof Resource) {
+                                final Resource resource = (Resource) dmtn.getUserObject();
+                                JPopupMenu menu = new JPopupMenu();
+                                
+                                JMenuItem item = new JMenuItem("remove");
+                                item.addActionListener(new ActionListener() {
+                                    @Override
+                                    public void actionPerformed(ActionEvent e) {
+                                        resource.getPrimary().removeResource(resource);
+                                        update();
+                                    }
+                                });
+                                menu.add(item);
                                 menu.show(tree, pathBounds.x, pathBounds.y + pathBounds.height);
                             } else if (dmtn.getUserObject() instanceof Element) {
                                 final Element element = (Element) dmtn.getUserObject();
@@ -217,12 +231,52 @@ public class ProjectTreeTab implements Tab, Extensible {
                                         subItem.addActionListener(new ActionListener() {
                                             @Override
                                             public void actionPerformed(ActionEvent e) {
-                                                createElement(element, editor);
+                                                createElement(element, (Editor) editor.createInstance());
                                             }
                                         });
                                         item.add(subItem);
                                     }
                                     menu.add(item);
+                                }
+
+                                if (element instanceof ExtensibleElement) {
+                                    final ExtensibleElement extensibleElement = (ExtensibleElement) element;
+                                    item = new JMenu("add resource");
+                                    boolean empty = true;
+                                    if (extensibleElement.getCompatibleCategories().isEmpty()) {
+                                        for (final Element subElement : project.getElements()) {
+                                            if (subElement != extensibleElement) {
+                                                JMenuItem subItem = new JMenuItem(subElement.toString());
+                                                subItem.addActionListener(new ActionListener() {
+                                                    @Override
+                                                    public void actionPerformed(ActionEvent e) {
+                                                        extensibleElement.addResource(new Resource(extensibleElement, subElement));
+                                                        update();
+                                                    }
+                                                });
+                                                item.add(subItem);
+                                                empty = false;
+                                            }
+                                        }
+                                    } else {
+                                        for (String category : extensibleElement.getCompatibleCategories()) {
+                                            for (final Element subElement : project.getElements(category)) {
+                                                JMenuItem subItem = new JMenuItem(subElement.toString());
+                                                subItem.addActionListener(new ActionListener() {
+                                                    @Override
+                                                    public void actionPerformed(ActionEvent e) {
+                                                        extensibleElement.addResource(new Resource(extensibleElement, subElement));
+                                                        update();
+                                                    }
+                                                });
+                                                item.add(subItem);
+                                                empty = false;
+                                            }
+                                        }
+                                    }
+                                    if (!empty) {
+                                        menu.add(item);
+                                    }
                                 }
 
                                 item = new JMenuItem("rename");
@@ -374,13 +428,21 @@ public class ProjectTreeTab implements Tab, Extensible {
     public final void update() {
         DefaultMutableTreeNode top = new DefaultMutableTreeNode(project);
         tree.setModel(new DefaultTreeModel(top));
-        List<Element.CategoryData> categories = PluginManager.getInstance().createFactoryManager(null).getEntities("s3f.base.project.category.*", Element.CategoryData.class);
+        List<Element.CategoryData> categories = PluginManager.getInstance().createFactoryManager(null).getEntities("s3f.core.project.category.*", Element.CategoryData.class);
         for (Element.CategoryData category : categories) {
             DefaultMutableTreeNode elementCategory = new DefaultMutableTreeNode(category);
             boolean isEmpty = true;
             for (Element se : project.getElements(category.getName())) {
                 DefaultMutableTreeNode element = new DefaultMutableTreeNode(se);
                 elementCategory.add(element);
+                if (se instanceof ExtensibleElement) {
+                    ExtensibleElement ex = (ExtensibleElement) se;
+                    for (Resource r : ex.getResources()) {
+                        DefaultMutableTreeNode subElement = new DefaultMutableTreeNode(r);
+                        element.add(subElement);
+                    }
+                }
+
                 isEmpty = false;
             }
             if (!isEmpty) {
@@ -388,9 +450,48 @@ public class ProjectTreeTab implements Tab, Extensible {
             }
         }
         for (int i = 0; i < tree.getRowCount(); i++) {
+            TreePath pathForRow = tree.getPathForRow(i);
+            Object lastPathComponent = pathForRow.getLastPathComponent();
+            if (lastPathComponent instanceof DefaultMutableTreeNode){
+                DefaultMutableTreeNode defaultMutableTreeNode = (DefaultMutableTreeNode) lastPathComponent;
+                Object userObject = defaultMutableTreeNode.getUserObject();
+                if (userObject instanceof Element){
+                    continue;
+                }
+            }
             tree.expandRow(i);
         }
     }
+
+//    private void setExpandedState(Object id, boolean expand) {
+//        DefaultMutableTreeNode root = (DefaultMutableTreeNode) tree.getModel().getRoot();
+//        Enumeration e = root.breadthFirstEnumeration();
+//        while (e.hasMoreElements()) {
+//            DefaultMutableTreeNode node = (DefaultMutableTreeNode) e.nextElement();
+//            if (node.getUserObject().equals(id)) {
+//                TreePath path = new TreePath(node.getPath());
+//                expandNode(path, expand);
+//                break;
+//            }
+//        }
+//    }
+//
+//    private void expandNode(TreePath parent, boolean expand) {
+//        TreeNode node = (TreeNode) parent.getLastPathComponent();
+//        if (node.getChildCount() >= 0) {
+//            Enumeration e = node.children();
+//            while (e.hasMoreElements()) {
+//                TreeNode n = (TreeNode) e.nextElement();
+//                TreePath path = parent.pathByAddingChild(n);
+//                expandNode(path, expand);
+//            }
+//        }
+//        if (expand) {
+//            tree.expandPath(parent);
+//        } else {
+//            tree.collapsePath(parent);
+//        }
+//    }
 
     @Override
     public void selected() {
@@ -418,15 +519,18 @@ public class ProjectTreeTab implements Tab, Extensible {
             if (obj instanceof Element) {
                 icon = ((Element) obj).getIcon();
             } else if (obj instanceof Project) {
-//                setIcon(UIManager.getIcon("FileView.floppyDriveIcon"));
-                setIcon(PROJECT_ICON);
-                return this;
+                icon = PROJECT_ICON;
             } else if (obj instanceof Element.CategoryData) {
                 icon = ((Element.CategoryData) obj).getIcon();
-                if (icon != null) {
-                    setIcon(icon);
-                    return this;
-                }
+            } else if (obj instanceof ExtensibleElement) {
+                icon = ((ExtensibleElement) obj).getIcon();
+            } else if (obj instanceof Resource) {
+                icon = ((Resource) obj).getSecondary().getIcon();
+            }
+
+            if (icon != null) {
+                setIcon(icon);
+                return this;
             }
 
             if (bLeaf) {

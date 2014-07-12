@@ -20,20 +20,20 @@ import s3f.core.plugin.Plugabble;
  */
 public class MessageTab implements Tab {
 
-    private static class TMPData {//mensagem
+    private static class Message {
 
         public int level;
         public Object focusable;
         public String msg;
 
-        public TMPData(int level, Object focusable, String msg) {
+        public Message(int level, Object focusable, String msg) {
             this.level = level;
             this.focusable = focusable;
             this.msg = msg;
         }
     }
 
-    private static final ArrayList<TMPData> messages = new ArrayList<>();
+    private static final ArrayList<Message> messages = new ArrayList<>();
     private static final MyTableModel model = new MyTableModel();
     private final Data data;
     private final JTable table;
@@ -42,19 +42,24 @@ public class MessageTab implements Tab {
     public MessageTab() {
         table = new JTable(model);
         scrollPane = new JScrollPane(table);
-        data = new Data("messageTab", "s3f.base.ui", "MessageTab");
+        data = new Data("messageTab", "s3f.core.ui", "MessageTab");
         TabProperty.put(data, "Mensagens", null, "testet", scrollPane);
+        data.setReference(this);
 
         TableColumn column;
         for (int i = 0; i < 3; i++) {
             column = table.getColumnModel().getColumn(i);
-            if (i != 2) {
-                column.setMaxWidth(100);
+            if (i == 0) {
+                column.setMaxWidth(60);
+            } else if (i == 1) {
+                column.setMinWidth(100);
             }
         }
 
-        for (int i = 0; i < 20; i++) {
-            log(i, UIManager.getIcon("FileView.fileIcon"), "asd " + Math.random());
+        {//teste
+            for (int i = 0; i < 20; i++) {
+                log(i, UIManager.getIcon("FileView.fileIcon"), "asd " + Math.random());
+            }
         }
 
     }
@@ -74,7 +79,7 @@ public class MessageTab implements Tab {
     }
 
     public static void log(int level, Object focusable, String msg) {
-        messages.add(new TMPData(level, focusable, msg));
+        messages.add(new Message(level, focusable, msg));
         model.fireTableDataChanged();
     }
 
