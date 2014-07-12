@@ -1,6 +1,5 @@
 /build/
 /dist/
 /test/
-/lib/
-/plugins/
 /nbproject/private/
+*~

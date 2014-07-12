@@ -41,6 +41,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.ResourceBundle;
 import java.util.TreeMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import s3f.S3F;
 import s3f.core.project.FileCreator;
 import s3f.core.script.ScriptManager;
@@ -51,16 +53,16 @@ public class PluginManager {
 
     public static Locale LOCALE = Locale.getDefault();//new Locale("pt", "BR");
     private static Class mainClass = null;
-    
+
     private static PluginManager PLUGIN_MANAGER = null;
 
-    public static Class getMainClass(){
-        if (mainClass == null){
+    public static Class getMainClass() {
+        if (mainClass == null) {
             mainClass = S3F.class;
         }
         return mainClass;
     }
-    
+
     public static PluginManager getInstance(String[] args, Class mainClass) {
         PluginManager.mainClass = mainClass;
         for (String arg : args) {
@@ -136,6 +138,9 @@ public class PluginManager {
     private ResourceBundle defaultBundle;
     private final EntityManager factoryManager;
     private final EntityManager entityManager;
+    private ClassLoader classLoader;
+    private String classRunningPath;
+    private boolean runningOnJARFile = false;
 
     private PluginManager() {
         factoryTreeRoot = new Data("s3f", "", "Factory Tree Root");
@@ -144,7 +149,15 @@ public class PluginManager {
         entityManager = new EntityManager(entityTreeRoot);
         pluginList = new ArrayList<>();
         bundleMap = new HashMap<>();
-        defaultBundle = ResourceBundle.getBundle("s3f.lang.lang", LOCALE, this.getClass().getClassLoader());
+        classLoader = this.getClass().getClassLoader();
+        defaultBundle = ResourceBundle.getBundle("s3f.lang.lang", LOCALE, classLoader);
+        classRunningPath = PluginManager.class.getProtectionDomain().getCodeSource().getLocation().getPath();
+
+        if (classRunningPath.endsWith(".jar")) {
+            int i = classRunningPath.lastIndexOf('/');
+            classRunningPath = classRunningPath.substring(0, i);
+            runningOnJARFile = true;
+        }
 //        Locale l = new Locale("pt", "BR");
 //        defaultBundle = null;
 //        try {
@@ -162,10 +175,33 @@ public class PluginManager {
     }
 
     private void init() {
+//        buildClasspath();
         loadPlugins();
-//        initPlugins();
         loadConfigurationFiles();
         runUserScripts();
+    }
+
+    @Deprecated
+    private void buildClasspath() {
+        if (runningOnJARFile) {
+            File pluginsDir = new File(classRunningPath + "/lib");
+
+            if (pluginsDir.isDirectory()) {
+                File[] directoryListing = pluginsDir.listFiles();
+                if (directoryListing != null) {
+                    for (File child : directoryListing) {
+                        if (child.getName().endsWith(".jar")) {
+                            File jar = new File(child.getAbsolutePath());
+                            try {
+                                classLoader = new ParentLastURLClassLoader(new URL[]{jar.toURI().toURL()}, classLoader);
+                            } catch (MalformedURLException ex) {
+                                ex.printStackTrace();
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
     /**
@@ -175,20 +211,10 @@ public class PluginManager {
      * configuração dos plugins.
      */
     private void loadPlugins() {
-        String classRunningPath = PluginManager.class.getProtectionDomain().getCodeSource().getLocation().getPath();
-
         ArrayList<String> pluginPaths = new ArrayList<>();
-
-        if (classRunningPath.endsWith(".jar")) {
-            int i = classRunningPath.lastIndexOf('/');
-            classRunningPath = classRunningPath.substring(0, i);
-
+        if (runningOnJARFile) {
             File pluginsDir = new File(classRunningPath + "/plugins");
 
-//            ClassLoader p = loadPlugin(classRunningPath + "/plugins/Magenta.jar", this.getClass().getClassLoader());
-//            System.out.println(p);
-//            p = loadPlugin(classRunningPath + "/plugins/JIFI.jar", p);
-//            System.out.println(p);
             if (pluginsDir.isDirectory()) {
                 File[] directoryListing = pluginsDir.listFiles();
                 if (directoryListing != null) {
@@ -206,14 +232,12 @@ public class PluginManager {
             }
 
             boolean load = true;
-            ClassLoader classLoader = this.getClass().getClassLoader();
+            ClassLoader classLoader = this.classLoader;
             while (!pluginPaths.isEmpty() && load) {
                 load = false;
                 for (Iterator<String> it = pluginPaths.iterator(); it.hasNext();) {
                     String path = it.next();
-                    int size = pluginList.size();
-                    classLoader = loadPlugin(path, classLoader);
-                    if (size > pluginList.size()) {
+                    if (loadPlugin(path)) {
                         load = true;
                         it.remove();
                     }
@@ -382,18 +406,19 @@ public class PluginManager {
      * @param parent
      * @return
      */
-    public ClassLoader loadPlugin(String pathToJar, ClassLoader parent) {
+    public boolean loadPlugin(String pathToJar) {
         try {
             File jar = new File(pathToJar);
-            //ClassLoader loader = URLClassLoader.newInstance(new URL[]{jar.toURI().toURL()});            
-            ClassLoader loader = new ParentLastURLClassLoader(new URL[]{jar.toURI().toURL()}, parent);
+            ClassLoader loader = new ParentLastURLClassLoader(new URL[]{jar.toURI().toURL()}, classLoader);
             String name = pathToJar.substring(pathToJar.lastIndexOf("/") + 1, pathToJar.lastIndexOf("."));
-            load(loader.getResourceAsStream("s3f/" + name.toLowerCase() + "/plugin.cfg"), loader);
-            return loader;
+            if (load(loader.getResourceAsStream("s3f/" + name.toLowerCase() + "/plugin.cfg"), loader)) {
+                classLoader = loader;
+                return true;
+            }
         } catch (MalformedURLException ex) {
             ex.printStackTrace();
         }
-        return null;
+        return false;
     }
 
     /**
@@ -403,19 +428,19 @@ public class PluginManager {
      * @param pathToConfigPOJO
      * @param loader
      */
-    public void loadSoftPlugin(String pathToConfigPOJO, ClassLoader loader) {
+    public boolean loadSoftPlugin(String pathToConfigPOJO, ClassLoader loader) {
         if (loader == null) {
             loader = ClassLoader.getSystemClassLoader();
         }
-        load(loader.getResourceAsStream(pathToConfigPOJO), loader);
+        return load(loader.getResourceAsStream(pathToConfigPOJO), loader);
     }
 
-    private void load(InputStream is, ClassLoader loader) {
+    private boolean load(InputStream is, ClassLoader loader) {
         if (is == null) {
             System.out.println("invalid plugin");
-            return;
+            return false;
         }
-        load(FileCreator.convertInputStreamToString(is), loader);
+        return load(FileCreator.convertInputStreamToString(is), loader);
     }
 
     private boolean validatePlugin(PluginPOJO cfg) {
@@ -529,31 +554,7 @@ public class PluginManager {
         }
     }
 
-    public void registerPlugin(PluginPOJO cfg, ClassLoader loader)
-            throws ClassNotFoundException, InstantiationException, IllegalAccessException {
-        //adiciona o plugin na lista
-        pluginList.add(cfg);
-        //internacionalização
-        if (cfg.langFolder != null) {
-            bundleMap.put(cfg.name, ResourceBundle.getBundle(cfg.langFolder + ".lang", LOCALE, loader));
-        }
-
-        if (cfg.nativeLibs != null) {
-            String path = PluginManager.class.getProtectionDomain().getCodeSource().getLocation().getPath();
-            path = path.substring(0, path.lastIndexOf('/') + 1);
-            path += "natives/" + JniNamer.os() + "/" + JniNamer.arch();
-
-            for (String nativeLib : cfg.nativeLibs) {
-                if (!loadNativeLib(nativeLib, path)) {
-                    System.out.println("erro ao carregar biblioteca:" + nativeLib);
-                }
-            }
-        }
-
-        //expande a arvore de factories
-        for (String className : cfg.content) {
-            registerClass(className, loader);
-        }
+    public boolean registerPlugin(PluginPOJO cfg, ClassLoader loader) {
 
         //define a plataforma
         if (cfg.platform != null && cfg.platform == true) {
@@ -566,34 +567,63 @@ public class PluginManager {
             }
         }
 
-        if (cfg.builder != null) {
-            Data reg = registerClass(cfg.builder, loader);
-            //inicializa plugin
-            if (reg != null && reg.getReference() instanceof PluginBuilder) {
-                PluginBuilder pb = (PluginBuilder) reg.getReference();
-                pb.setPluginManager(this);
-                pb.init();
+        if (cfg.nativeLibs != null) {
+            String path = PluginManager.class.getProtectionDomain().getCodeSource().getLocation().getPath();
+            path = path.substring(0, path.lastIndexOf('/') + 1);
+            path += "natives/" + JniNamer.os() + "/" + JniNamer.arch();
+
+            for (String nativeLib : cfg.nativeLibs) {
+                System.out.println("LOAD LIB");
+                if (!loadNativeLib(nativeLib, path)) {
+                    System.out.println("erro ao carregar biblioteca:" + nativeLib);
+                }
             }
         }
 
-        //expande o ramo construtor da gui
-        if (cfg.guibuilder != null) {
-            registerClass(cfg.guibuilder, loader);
+        try {
+            //expande a arvore de factories
+            for (String className : cfg.content) {
+                registerClass(className, loader);
+            }
+
+            if (cfg.builder != null) {
+                Data reg = registerClass(cfg.builder, loader);
+                //inicializa plugin
+                if (reg != null && reg.getReference() instanceof PluginBuilder) {
+                    PluginBuilder pb = (PluginBuilder) reg.getReference();
+                    pb.setPluginManager(this);
+                    pb.init();
+                }
+            }
+
+            //internacionalização
+            if (cfg.langFolder != null) {
+                bundleMap.put(cfg.name, ResourceBundle.getBundle(cfg.langFolder + ".lang", LOCALE, loader));
+            }
+
+            //expande o ramo construtor da gui
+            if (cfg.guibuilder != null) {
+                registerClass(cfg.guibuilder, loader);
+            }
+        } catch (NoClassDefFoundError | ClassNotFoundException | InstantiationException | IllegalAccessException e) {
+            e.printStackTrace();
+            return false;
         }
+
+        //adiciona o plugin na lista
+        pluginList.add(cfg);
+        return true;
     }
 
-    private void load(String pojo, ClassLoader loader) {
-        try {
-            Toml parser = Toml.parse(pojo);
-            PluginPOJO cfg = parser.getAs("plugin", PluginPOJO.class);
-            if (validatePlugin(cfg)) {
-                registerPlugin(cfg, loader);
-            } else {
-                System.out.println("invalid plugin: " + cfg.fullName);
-            }
-        } catch (ClassNotFoundException | IllegalAccessException | InstantiationException | NullPointerException ex) {
-            ex.printStackTrace();
+    private boolean load(String pojo, ClassLoader loader) {
+        Toml parser = Toml.parse(pojo);
+        PluginPOJO cfg = parser.getAs("plugin", PluginPOJO.class);
+        if (validatePlugin(cfg)) {
+            return registerPlugin(cfg, loader);
+        } else {
+            System.out.println("invalid plugin: " + cfg.fullName);
         }
+        return false;
     }
 
     private static void addNode(String path, Data node, Data tree) {

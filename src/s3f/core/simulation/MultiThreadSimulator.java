@@ -155,6 +155,7 @@ public class MultiThreadSimulator implements Simulator {
             t.reset();
             t.setSystem(null);
         }
+        state = PAUSED;
     }
 
     private synchronized void step() {
