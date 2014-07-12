@@ -18,7 +18,7 @@ S3F (Scalable Systems and Simulations Framework) é um framework open source, gr
 JIFI
 ----
 
-S3F foi desenvolvido para permitir a criação de plugins para a segunda versão do [JIFI]() (Java Interactive Flowchart Interpreter), projeto do [peteco]() (grupo [PET] de engenharia de computação da [UTFPR]) que tem como o objetivo a criação de uma ferramenta didática para o ensino de programação e robótica usando a plataforma [Arduino].
+S3F foi desenvolvido para permitir a criação de plugins para a segunda versão do [JIFI], Java Interactive Flowchart Interpreter, projeto do [peteco], grupo [PET] de engenharia de computação da [UTFPR], que tem como o objetivo a criação de uma ferramenta didática para o ensino de programação e robótica usando a plataforma [Arduino].
 
 **Gif versão alfa (S3F + Magenta + JIFI + DWRS):**
 
@@ -156,8 +156,8 @@ GPLv3
 
 [jifi]:https://github.com/anderson-/JIFI
 [peteco]:http://dainf.ct.utfpr.edu.br/peteco/cursos/robotica
-[pet]:portal.mec.gov.br/pet
-[utfpr]:http://www.utfpr.edu.
-[arduino]:www.arduino.cc
+[pet]:http://portal.mec.gov.br/pet
+[utfpr]:http://www.utfpr.edu.br
+[arduino]:http://www.arduino.cc
 [ant]:http://ant.apache.org
 [netbeans]:https://netbeans.org
