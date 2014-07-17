@@ -21,11 +21,20 @@ public class RandomColor {
         h %= 1f;
         return Color.getHSBColor(h, 0.35f, 0.95f);
     }
-    
+
     public static Color generate(float saturation, float brightness) {
         h += golden_ratio_conjugate;
         h %= 1f;
         return Color.getHSBColor(h, saturation, brightness);
     }
-    
+
+    /*
+     TODO: instanciar RandomColor para garantir que as cores serão diferentes ao
+     ser usada por varios objetos.
+     */
+    @Deprecated
+    public static void setSeed(float i) {
+        h = i;
+    }
+
 }

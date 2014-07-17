@@ -31,6 +31,7 @@ import s3f.core.ui.MainUI;
 public class S3F {
 
     public static void main(String[] args) {
+        PluginManager.getInstance(args, S3F.class);
         MainUI.buildAndRun();
     }
 
@@ -47,7 +48,7 @@ public class S3F {
             }
 
             /* Build command: java -jar application.jar */
-            final ArrayList<String> command = new ArrayList<String>();
+            final ArrayList<String> command = new ArrayList<>();
             command.add(javaBin);
             command.add("-jar");
             command.add(currentJar.getPath());
@@ -56,10 +57,8 @@ public class S3F {
             final ProcessBuilder builder = new ProcessBuilder(command);
             builder.start();
             System.exit(0);
-        } catch (URISyntaxException ex) {
-
-        } catch (IOException ex) {
-
+        } catch (URISyntaxException | IOException ex) {
+            ex.printStackTrace();
         }
     }
 }

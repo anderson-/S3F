@@ -278,6 +278,7 @@ public class CodeEditorTab implements Editor {
         if (content instanceof TextFile) {
             final TextFile textFile = (TextFile) content;
             textArea.setText(textFile.getText());
+            //TODO: substituir por um contador de 500ms apos a utltima modificacao
             textArea.getDocument().addDocumentListener(new DocumentListener() {
                 @Override
                 public void insertUpdate(DocumentEvent e) {
