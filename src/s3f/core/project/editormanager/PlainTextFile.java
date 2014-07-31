@@ -20,12 +20,11 @@ import s3f.core.project.SimpleElement;
 public class PlainTextFile extends SimpleElement implements TextFile {
 
     public static final Element.CategoryData PLAIN_TEXT_FILES = new Element.CategoryData("Plain Text", "txt", new ImageIcon(PlainTextFile.class.getResource("/resources/icons/fugue/scripts-text.png")), new PlainTextFile());
-    private static final EditorManager EDITOR_MANAGER = new DefaultEditorManager(new CodeEditorTab());
-
+    
     private String text;
 
     public PlainTextFile() {
-        super("plant", "/resources/icons/fugue/document-text.png", PLAIN_TEXT_FILES, EDITOR_MANAGER);
+        super("plant", "/resources/icons/fugue/document-text.png", PLAIN_TEXT_FILES, new Class[]{CodeEditorTab.class});
     }
 
     @Override

@@ -12,8 +12,11 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JMenu;
@@ -103,8 +106,17 @@ public class ProjectTreeTab implements Tab, Extensible {
     }
 
     public void createElement(Element element) {
-        Editor editor = (Editor) element.getEditorManager().getDefaultEditor().createInstance();
-        createElement(element, editor);
+        Collection<Class<? extends Editor>> editors = element.getData().getProperty(EditableProperty.EDITORS);
+        if (editors != null && !editors.isEmpty()) {
+            try {
+                Editor editor = (Editor) editors.iterator().next().newInstance();
+                createElement(element, editor);
+            } catch (InstantiationException | IllegalAccessException ex) {
+                System.out.println("invalid class" + ex.getMessage());
+            }
+        } else {
+            System.out.println("não deu certo :/");
+        }
     }
 
     public void createElement(Element element, Editor editor) {
@@ -198,7 +210,7 @@ public class ProjectTreeTab implements Tab, Extensible {
                             } else if (dmtn.getUserObject() instanceof Resource) {
                                 final Resource resource = (Resource) dmtn.getUserObject();
                                 JPopupMenu menu = new JPopupMenu();
-                                
+
                                 JMenuItem item = new JMenuItem("remove");
                                 item.addActionListener(new ActionListener() {
                                     @Override
@@ -224,14 +236,19 @@ public class ProjectTreeTab implements Tab, Extensible {
                                 });
                                 menu.add(item);
 
-                                if (element.getEditorManager().getAvailableEditors().size() > 1) {
+                                Collection<Class<? extends Editor>> editors = element.getData().getProperty(EditableProperty.EDITORS);
+                                if (editors != null && !editors.isEmpty()) {
                                     item = new JMenu("open with...");
-                                    for (final Editor editor : element.getEditorManager().getAvailableEditors()) {
-                                        JMenuItem subItem = new JMenuItem(editor.getClass().getSimpleName());
+                                    for (final Class<? extends Editor> ce : editors) {
+                                        JMenuItem subItem = new JMenuItem(ce.getSimpleName());
                                         subItem.addActionListener(new ActionListener() {
                                             @Override
                                             public void actionPerformed(ActionEvent e) {
-                                                createElement(element, (Editor) editor.createInstance());
+                                                try {
+                                                    createElement(element, (Editor) ce.newInstance());
+                                                } catch (Exception ex) {
+                                                    System.out.println("invalid class:" + ex.getMessage());
+                                                }
                                             }
                                         });
                                         item.add(subItem);
@@ -452,10 +469,10 @@ public class ProjectTreeTab implements Tab, Extensible {
         for (int i = 0; i < tree.getRowCount(); i++) {
             TreePath pathForRow = tree.getPathForRow(i);
             Object lastPathComponent = pathForRow.getLastPathComponent();
-            if (lastPathComponent instanceof DefaultMutableTreeNode){
+            if (lastPathComponent instanceof DefaultMutableTreeNode) {
                 DefaultMutableTreeNode defaultMutableTreeNode = (DefaultMutableTreeNode) lastPathComponent;
                 Object userObject = defaultMutableTreeNode.getUserObject();
-                if (userObject instanceof Element){
+                if (userObject instanceof Element) {
                     continue;
                 }
             }
@@ -492,7 +509,6 @@ public class ProjectTreeTab implements Tab, Extensible {
 //            tree.collapsePath(parent);
 //        }
 //    }
-
     @Override
     public void selected() {
 

@@ -5,16 +5,12 @@
  */
 package s3f.core.script;
 
-import java.io.InputStream;
 import javax.swing.ImageIcon;
 import s3f.core.code.CodeEditorTab;
 import s3f.core.plugin.Plugabble;
 import s3f.core.plugin.SimulableElement;
 import s3f.core.project.Element;
-import s3f.core.project.FileCreator;
 import s3f.core.project.SimpleElement;
-import s3f.core.project.editormanager.DefaultEditorManager;
-import s3f.core.project.editormanager.EditorManager;
 import s3f.core.project.editormanager.TextFile;
 import s3f.core.simulation.System;
 
@@ -25,13 +21,12 @@ import s3f.core.simulation.System;
 public class Script extends SimpleElement implements TextFile, SimulableElement {
 
     public static final Element.CategoryData JS_SCRIPTS = new Element.CategoryData("Scripts", "js", new ImageIcon(Script.class.getResource("/resources/icons/fugue/scripts-text.png")), new Script());
-    private static final EditorManager EDITOR_MANAGER = new DefaultEditorManager(new CodeEditorTab());
-
+    
     private String script;
     private final JSInterpreter interpreter = new JSInterpreter(this);
 
     public Script() {
-        super("scry", "/resources/icons/fugue/script-text.png", JS_SCRIPTS, EDITOR_MANAGER);
+        super("scry", "/resources/icons/fugue/script-text.png", JS_SCRIPTS, new Class[]{CodeEditorTab.class});
     }
 
     @Override

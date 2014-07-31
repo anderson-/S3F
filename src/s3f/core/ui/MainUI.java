@@ -21,15 +21,12 @@
  */
 package s3f.core.ui;
 
-import java.awt.AlphaComposite;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
-import java.awt.GradientPaint;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
+import java.awt.Image;
 import java.awt.Insets;
 import java.awt.Point;
 import java.awt.Rectangle;
@@ -38,13 +35,11 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
-import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 import javax.swing.AbstractAction;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
@@ -59,7 +54,6 @@ import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
-import javax.swing.JLayer;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
@@ -75,10 +69,8 @@ import javax.swing.KeyStroke;
 import javax.swing.LookAndFeel;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
-import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.WindowConstants;
 import javax.swing.filechooser.FileFilter;
-import javax.swing.plaf.LayerUI;
 import net.infonode.docking.DockingWindow;
 import net.infonode.docking.DockingWindowAdapter;
 import net.infonode.docking.RootWindow;
@@ -95,10 +87,8 @@ import net.infonode.docking.theme.LookAndFeelDockingTheme;
 import net.infonode.docking.theme.ShapedGradientDockingTheme;
 import net.infonode.docking.theme.SlimFlatDockingTheme;
 import net.infonode.docking.theme.SoftBlueIceDockingTheme;
-import net.infonode.docking.util.DockingUtil;
 import net.infonode.docking.util.PropertiesUtil;
 import net.infonode.gui.laf.InfoNodeLookAndFeel;
-import net.infonode.gui.laf.InfoNodeLookAndFeelTheme;
 import net.infonode.util.Direction;
 import s3f.core.plugin.Configurable;
 import s3f.core.plugin.ConfigurableObject;
@@ -118,7 +108,8 @@ import s3f.core.ui.tab.Tab;
 import s3f.core.ui.tab.TabProperty;
 import s3f.util.ColorUtils;
 import s3f.util.RandomColor;
-import s3f.util.SplashScreen;
+import s3f.util.splashscreen.SimpleSplashScreen;
+import s3f.util.splashscreen.SplashScreen;
 
 public class MainUI implements Extensible {
 
@@ -812,7 +803,18 @@ public class MainUI implements Extensible {
     }
 
     public static void buildAndRun() {
-        final SplashScreen splashScreen = new SplashScreen("/resources/jifi_logo90.png", true);
+        final SplashScreen splashScreen;
+        if (GUIBuilder.getSplashScreen() != null) {
+            splashScreen = GUIBuilder.getSplashScreen();
+        } else {
+            splashScreen = new SimpleSplashScreen(""
+                    + "   ___ _______  \n"
+                    + "  / __|__ / __|\n"
+                    + "  \\__ \\|_ \\ _|\n"
+                    + "  |___/___/_|\n"
+                    + "                ", true
+            );
+        }
         splashScreen.splash();
         try {
 //            String systemLookAndFeelClassName = UIManager.getSystemLookAndFeelClassName();
@@ -826,7 +828,11 @@ public class MainUI implements Extensible {
 //                    }
 //                }
 //            }
-            UIManager.setLookAndFeel(createLookAndFeel(RandomColor.generate(.4f, .8f)));
+            if (GUIBuilder.getLookAndFeel() != null) {
+                UIManager.setLookAndFeel(GUIBuilder.getLookAndFeel());
+            } else {
+                UIManager.setLookAndFeel(createLookAndFeel(RandomColor.generate(.4f, .8f)));
+            }
 
 //            InfoNodeLookAndFeelTheme theme
 //                    = new InfoNodeLookAndFeelTheme("My Theme",
@@ -845,11 +851,18 @@ public class MainUI implements Extensible {
 
         try {
             final MainUI ui = MainUI.getInstance();
+            Image icon;
+            if (GUIBuilder.getIcon() != null) {
+                icon = GUIBuilder.getIcon();
+            } else {
+                icon = new ImageIcon(MainUI.class.getResource("/resources/jifi.png")).getImage();
+            }
+            ui.window.setIconImage(icon);
             SwingUtilities.invokeLater(new Runnable() {
                 @Override
                 public void run() {
                     ui.show();
-                    splashScreen.dispose();
+                    splashScreen.done();
                 }
             });
         } catch (Throwable t) {

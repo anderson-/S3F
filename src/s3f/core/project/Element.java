@@ -12,7 +12,6 @@ import javax.swing.Icon;
 import s3f.core.plugin.Configurable;
 import s3f.core.plugin.Data;
 import s3f.core.plugin.Plugabble;
-import s3f.core.project.editormanager.EditorManager;
 
 /**
  *
@@ -87,8 +86,6 @@ public interface Element extends Plugabble {
     public void save(FileCreator fileCreator);
 
     public Element load(InputStream stream);
-
-    public EditorManager getEditorManager();
 
     public void setCurrentEditor(Editor editor);
 

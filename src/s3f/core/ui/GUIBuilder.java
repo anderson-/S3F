@@ -7,25 +7,56 @@ package s3f.core.ui;
 
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.Image;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.ResourceBundle;
 import javax.swing.BorderFactory;
+import javax.swing.ImageIcon;
 import javax.swing.JComponent;
 import javax.swing.JMenu;
 import javax.swing.JPanel;
 import javax.swing.JSeparator;
+import javax.swing.LookAndFeel;
 import javax.swing.SwingConstants;
 import s3f.core.plugin.Data;
 import s3f.core.plugin.Plugabble;
 import s3f.core.plugin.PluginManager;
 import s3f.core.ui.tab.Tab;
+import s3f.util.splashscreen.SplashScreen;
 
 /**
  *
  * @author antunes
  */
 public abstract class GUIBuilder implements Plugabble {
+
+    private static SplashScreen splashScreen;
+    private static LookAndFeel lookAndFeel;
+    private static Image icon;
+
+    public static void setSplashScreen(SplashScreen splashScreen) {
+        GUIBuilder.splashScreen = splashScreen;
+    }
+
+    public static SplashScreen getSplashScreen() {
+        return splashScreen;
+    }
+
+    public static void setLookAndFeel(LookAndFeel lookAndFeel) {
+        GUIBuilder.lookAndFeel = lookAndFeel;
+    }
+
+    public static LookAndFeel getLookAndFeel() {
+        return lookAndFeel;
+    }
+
+    public static void setIcon(Image icon) {
+        GUIBuilder.icon = icon;
+    }
+    public static Image getIcon() {
+        return icon;
+    }
 
     public final Data data;
     private ResourceBundle bundle;
@@ -85,8 +116,8 @@ public abstract class GUIBuilder implements Plugabble {
     public Plugabble createInstance() {
         return null;
     }
-    
-    protected String getString(String key){
+
+    protected String getString(String key) {
         return bundle.getString(key);
     }
 
@@ -143,7 +174,7 @@ public abstract class GUIBuilder implements Plugabble {
         toolbarComponents.addAll(guibuilder.toolbarComponents);
         tabs.addAll(guibuilder.tabs);
     }
-    
+
     public JComponent separator() {
         JPanel p = new JPanel();
         JSeparator sep = new JSeparator(SwingConstants.VERTICAL);

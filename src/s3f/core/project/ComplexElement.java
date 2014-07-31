@@ -5,13 +5,9 @@
  */
 package s3f.core.project;
 
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import javax.swing.Icon;
-import s3f.core.plugin.Plugabble;
-import s3f.core.project.editormanager.EditorManager;
 
 /**
  *
@@ -21,10 +17,10 @@ public abstract class ComplexElement extends SimpleElement implements Extensible
 
     private final ArrayList<String> compatibleCategories = new ArrayList<>();
     private final ArrayList<Resource> resources = new ArrayList<>();
-    private ArrayList<Object> externalResources = new ArrayList<>();
+    private final ArrayList<Object> externalResources = new ArrayList<>();
 
-    public ComplexElement(String name, String iconpath, CategoryData category, EditorManager editorManager, String... categories) {
-        super(name, iconpath, category, editorManager);
+    public ComplexElement(String name, String iconpath, CategoryData category, Class<? extends Editor>[] editors, String... categories) {
+        super(name, iconpath, category, editors);
         compatibleCategories.addAll(Arrays.asList(categories));
     }
 

@@ -8,11 +8,10 @@ package s3f.core.project;
 import java.io.InputStream;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
+import s3f.core.code.CodeEditorTab;
 import s3f.core.plugin.Data;
 import s3f.core.plugin.Plugabble;
-import s3f.core.project.editormanager.EditorManager;
 import s3f.core.project.editormanager.TextFile;
-import s3f.core.script.Script;
 
 /**
  *
@@ -24,15 +23,19 @@ public abstract class SimpleElement implements Element {
     private final Data data;
     private Icon icon;
     private final CategoryData category;
-    private final EditorManager editorManager;
     private Editor editor;
 
-    public SimpleElement(String name, String iconpath, Element.CategoryData category, EditorManager editorManager) {
+    public SimpleElement(String name, String iconpath, Element.CategoryData category, Class<? extends Editor>[] editors) {
         this.name = name;
         this.icon = new ImageIcon(getClass().getResource(iconpath));
         this.category = category;
-        this.editorManager = editorManager;
         data = new Data(name, "s3f.core.project.element", "sei lá");
+        for (Class<? extends Editor> e : editors) {
+            EditableProperty.put(data, e);
+        }
+        if (this instanceof TextFile) {
+            EditableProperty.put(data, CodeEditorTab.class);
+        }
     }
 
     @Override
@@ -93,11 +96,6 @@ public abstract class SimpleElement implements Element {
     @Override
     public String toString() {
         return name;
-    }
-
-    @Override
-    public EditorManager getEditorManager() {
-        return editorManager;
     }
 
     @Override
