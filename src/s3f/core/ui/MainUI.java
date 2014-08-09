@@ -73,6 +73,7 @@ import javax.swing.WindowConstants;
 import javax.swing.filechooser.FileFilter;
 import net.infonode.docking.DockingWindow;
 import net.infonode.docking.DockingWindowAdapter;
+import net.infonode.docking.DockingWindowListener;
 import net.infonode.docking.RootWindow;
 import net.infonode.docking.SplitWindow;
 import net.infonode.docking.TabWindow;
@@ -438,6 +439,14 @@ public class MainUI implements Extensible {
             }
         });
 
+        if (GUIBuilder.getWelcomePage() != null) {
+            DockingWindow htmlDW = addView(1, new HTMLTab(GUIBuilder.getWelcomePage(), GUIBuilder.getWelcomePageStyle()));
+            htmlDW.getWindowProperties().setUndockEnabled(false);
+            htmlDW.getWindowProperties().setRestoreEnabled(false);
+            htmlDW.getWindowProperties().setCloseEnabled(false);
+            htmlDW.getWindowProperties().setMinimizeEnabled(false);
+        }
+
         SplitWindow firstSplitWindow = new SplitWindow(true, .2f, leftSplitWindow, firstTabWindow);
         rootWindow.setWindow(firstSplitWindow);
         messageDW.minimize();
@@ -681,9 +690,15 @@ public class MainUI implements Extensible {
                 (Icon) obj.getData().getProperty(TabProperty.ICON),
                 component
         );
+
         if (component instanceof ComponentListener) {
             view.addComponentListener((ComponentListener) component);
         }
+
+        if (obj instanceof DockingWindowListener) {
+            view.addListener((DockingWindowListener) obj);
+        }
+
         return addView(order, view);
     }
 

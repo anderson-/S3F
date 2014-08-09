@@ -8,6 +8,7 @@ package s3f.core.ui;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Image;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.ResourceBundle;
@@ -34,6 +35,8 @@ public abstract class GUIBuilder implements Plugabble {
     private static SplashScreen splashScreen;
     private static LookAndFeel lookAndFeel;
     private static Image icon;
+    private static String htmlWelcomePage;
+    private static String css;
 
     public static void setSplashScreen(SplashScreen splashScreen) {
         GUIBuilder.splashScreen = splashScreen;
@@ -54,8 +57,22 @@ public abstract class GUIBuilder implements Plugabble {
     public static void setIcon(Image icon) {
         GUIBuilder.icon = icon;
     }
+
     public static Image getIcon() {
         return icon;
+    }
+
+    public static void setWelcomePage(String htmlWelcomePage, String css) {
+        GUIBuilder.htmlWelcomePage = htmlWelcomePage;
+        GUIBuilder.css = css;
+    }
+
+    public static String getWelcomePage() {
+        return htmlWelcomePage;
+    }
+    
+    public static String getWelcomePageStyle() {
+        return css;
     }
 
     public final Data data;

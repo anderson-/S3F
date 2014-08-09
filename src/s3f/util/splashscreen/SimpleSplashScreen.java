@@ -206,6 +206,8 @@ public class SimpleSplashScreen extends Frame implements SplashScreen {
 
         SplashWindow(Frame aParent) {
             super(aParent);
+            setBackground(new Color(0, 0, 0, 0));
+//            setAlwaysOnTop(true);
         }
 
         public void setImage(Image aImage) {
@@ -214,9 +216,7 @@ public class SimpleSplashScreen extends Frame implements SplashScreen {
             Dimension screen = Toolkit.getDefaultToolkit().getScreenSize();
             Rectangle window = getBounds();
             setLocation((screen.width - window.width) / 2, (screen.height - window.height) / 2);
-            setBackground(new Color(0, 0, 0, 0));
             setVisible(true);
-            setAlwaysOnTop(true);
         }
 
         @Override
