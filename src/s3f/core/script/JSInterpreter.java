@@ -57,8 +57,9 @@ public class JSInterpreter implements s3f.core.simulation.System {
     private void step() {
         try {
             Invocable runScript = ScriptManager.runScript(script.getText(), "js", null);
-            
-            ScriptManager.createDrawingFrame(runScript, 10);
+
+//            ScriptManager.createDrawingFrame(runScript, 10);
+            ScriptManager.runFunction(runScript, "main");
         } catch (ScriptException ex) {
             ex.printStackTrace();
         }

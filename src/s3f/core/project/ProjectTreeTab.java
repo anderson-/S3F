@@ -33,10 +33,13 @@ import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
 import net.infonode.docking.View;
+import s3f.core.code.CodeEditorTab;
 import s3f.core.plugin.Data;
 import s3f.core.plugin.EntityManager;
 import s3f.core.plugin.Extensible;
 import s3f.core.plugin.PluginManager;
+import s3f.core.project.editormanager.PlainTextFile;
+import s3f.core.project.editormanager.TextFile;
 import s3f.core.ui.MainUI;
 import s3f.core.ui.tab.Tab;
 import s3f.core.ui.tab.TabProperty;
@@ -75,7 +78,7 @@ public class ProjectTreeTab implements Tab, Extensible {
         setProject(project);
 
         data = new Data("projectTreeTab", "s3f.core.project", "ProjectTreeTab");
-        TabProperty.put(data, "Projeto", null, "Informações sobre o projeto atual", treeView);
+        TabProperty.put(data, "Project", null, "Informações sobre o projeto atual", treeView);
 
         createUI();
     }
@@ -292,6 +295,48 @@ public class ProjectTreeTab implements Tab, Extensible {
                                         }
                                     }
                                     if (!empty) {
+                                        menu.add(item);
+                                    }
+                                }
+
+                                if (element instanceof TextFile) {
+                                    final TextFile textFile = (TextFile) element;
+                                    if (PlainTextFile.class != element.getClass()) {
+                                        item = new JMenuItem("convert in plain text file");
+                                        item.addActionListener(new ActionListener() {
+                                            @Override
+                                            public void actionPerformed(ActionEvent e) {
+                                                PlainTextFile newFile = new PlainTextFile();
+                                                newFile.setText(textFile.getText());
+                                                newFile.setName(textFile.getName());
+                                                deleteElement(textFile);
+                                                createElement(newFile, new CodeEditorTab());
+                                                project.addElement(newFile);
+                                                update();
+                                            }
+                                        });
+                                        menu.add(item);
+                                    } else {
+                                        item = new JMenu("Convert to");
+                                        List<Element.CategoryData> entities = PluginManager.getInstance().createFactoryManager(null).getEntities("s3f.core.project.category.*", Element.CategoryData.class);
+                                        for (final Element.CategoryData c : entities) {
+                                            if (c.getStaticInstance() instanceof TextFile && c.getStaticInstance().getClass() != PlainTextFile.class) {
+                                                JMenuItem subItem = new JMenuItem(c.getName());
+                                                subItem.addActionListener(new ActionListener() {
+                                                    @Override
+                                                    public void actionPerformed(ActionEvent e) {
+                                                        TextFile newFile = (TextFile) c.getStaticInstance().createInstance();
+                                                        newFile.setName(textFile.getName());
+                                                        newFile.setText(textFile.getText());
+                                                        deleteElement(textFile);
+                                                        project.addElement(newFile);
+                                                        update();
+                                                    }
+
+                                                });
+                                                item.add(subItem);
+                                            }
+                                        }
                                         menu.add(item);
                                     }
                                 }

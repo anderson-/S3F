@@ -7,20 +7,16 @@ package s3f.core.script;
 
 import java.awt.Dimension;
 import java.awt.Graphics;
-import java.io.FileNotFoundException;
-import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.Scanner;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.script.Invocable;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineFactory;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
+import javax.script.SimpleBindings;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 
@@ -48,9 +44,7 @@ public class ScriptManager {
         history.add(Arrays.toString(new Throwable().getStackTrace()));
 
         ScriptEngineManager mgr = new ScriptEngineManager();
-        ScriptEngine engine;
-
-        engine = mgr.getEngineByExtension(extension);
+        ScriptEngine engine = mgr.getEngineByExtension(extension);
 
         if (env != null) {
             for (Map.Entry<String, Object> e : env.entrySet()) {
@@ -92,6 +86,14 @@ public class ScriptManager {
 
     public static void buildComponents(final Invocable inv) {
 
+    }
+
+    public static void runFunction(final Invocable inv, String functionName) {
+        try {
+            inv.invokeFunction(functionName);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
     }
 
     public static void createDrawingFrame(final Invocable inv, final long interval) {

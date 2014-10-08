@@ -129,7 +129,6 @@ public class SimpleSplashScreen extends Frame implements SplashScreen {
     public void splash() {
         initImageAndTracker();
         setSize(fImage.getWidth(NO_OBSERVER), fImage.getHeight(NO_OBSERVER));
-        center();
 
         fMediaTracker.addImage(fImage, IMAGE_ID);
         try {
@@ -153,21 +152,6 @@ public class SimpleSplashScreen extends Frame implements SplashScreen {
             URL imageURL = SimpleSplashScreen.class.getResource(fImageId);
             fImage = Toolkit.getDefaultToolkit().getImage(imageURL);
         }
-    }
-
-    /**
-     * Centers the frame on the screen.
-     *
-     * <P>
-     * This centering service is more or less in
-     * {@link hirondelle.stocks.util.ui.UiUtil}; this duplication is justified
-     * only because the use of {@link hirondelle.stocks.util.ui.UiUtil} would
-     * entail more class loading, which is not desirable for a splash screen.
-     */
-    private void center() {
-        Dimension screen = Toolkit.getDefaultToolkit().getScreenSize();
-        Rectangle frame = getBounds();
-        setLocation((screen.width - frame.width) / 2, (screen.height - frame.height) / 2);
     }
 
     @Override
@@ -213,9 +197,7 @@ public class SimpleSplashScreen extends Frame implements SplashScreen {
         public void setImage(Image aImage) {
             fImage = aImage;
             setSize(fImage.getWidth(NO_OBSERVER), fImage.getHeight(NO_OBSERVER));
-            Dimension screen = Toolkit.getDefaultToolkit().getScreenSize();
-            Rectangle window = getBounds();
-            setLocation((screen.width - window.width) / 2, (screen.height - window.height) / 2);
+            setLocationRelativeTo(null);
             setVisible(true);
         }
 

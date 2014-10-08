@@ -252,7 +252,7 @@ public class MainUI implements Extensible {
                 dialog.dispose();
                 String locale = (String) pane.getInputValue();
                 if (locale != null && !locale.isEmpty()) {
-                    int returnVal = JOptionPane.showConfirmDialog(window, "O projeto atual será fechado, deseja prosseguir?", "Reiniciar", JOptionPane.YES_NO_OPTION);
+                    int returnVal = JOptionPane.showConfirmDialog(window, "The current project will be closed, would you like to proceed?", "Restart", JOptionPane.YES_NO_OPTION);
                     if (returnVal == JOptionPane.YES_OPTION) {
                         s3f.S3F.restartApplication("--lang=" + locale);
                     }
@@ -306,7 +306,7 @@ public class MainUI implements Extensible {
                 int returnVal = fileChooser.showOpenDialog(window);
 
                 if (returnVal == JFileChooser.APPROVE_OPTION) {
-                    returnVal = JOptionPane.showConfirmDialog(window, "O projeto atual será fechado, deseja prosseguir?", "Abrir", JOptionPane.YES_NO_OPTION);
+                    returnVal = JOptionPane.showConfirmDialog(window, "The current project will be closed, would you like to proceed?", "Open", JOptionPane.YES_NO_OPTION);
 
                     if (returnVal != JOptionPane.YES_OPTION) {
                         return;
@@ -315,9 +315,9 @@ public class MainUI implements Extensible {
 
                     project.load(file.getAbsolutePath());
                     projectTreeTab.update();
-                    for (Element el : project.getElements()) {
-                        projectTreeTab.createElement(el);
-                    }
+//                    for (Element el : project.getElements()) {
+//                        projectTreeTab.createElement(el);
+//                    }
                 }
             }
         };
@@ -375,10 +375,10 @@ public class MainUI implements Extensible {
         window.getContentPane().add(toolBarPanel, BorderLayout.NORTH);
 
         //deafult toolbar buttons
-        toolBarPanel.add(addTip(createToolbarButton(newDocument, "ashdas\nadadsy\niasdaus", "/resources/icons/fugue-24/document-new.png"), "dica :DDD"));
-        toolBarPanel.add(addTip(createToolbarButton(newProject, "aa", "/resources/icons/fugue-24/box-new.png"), "dica :DDD"));
-        toolBarPanel.add(addTip(createToolbarButton(openProject, "ss", "/resources/icons/fugue-24/folder-box.png"), "dica :DDD"));
-        toolBarPanel.add(addTip(createToolbarButton(saveProject, "ss", "/resources/icons/fugue-24/disk-black.png"), "dica :DDD"));
+        toolBarPanel.add(addTip(createToolbarButton(newDocument, "ashdas\nadadsy\niasdaus", "/resources/icons/fugue-24/document-new.png"), ""));
+        toolBarPanel.add(addTip(createToolbarButton(newProject, "aa", "/resources/icons/fugue-24/box-new.png"), ""));
+        toolBarPanel.add(addTip(createToolbarButton(openProject, "ss", "/resources/icons/fugue-24/folder-box.png"), ""));
+        toolBarPanel.add(addTip(createToolbarButton(saveProject, "ss", "/resources/icons/fugue-24/disk-black.png"), ""));
 
         //mainPanel
         mainPanel = new JPanel();
@@ -396,7 +396,7 @@ public class MainUI implements Extensible {
         mainPanel.add(rootWindow);
 
         //ProjectTree & Console
-        project = new Project("Projeto");
+        project = new Project("Project");
         projectTreeTab = new ProjectTreeTab(project);
 
         View projectTreeView = new View(
@@ -409,7 +409,7 @@ public class MainUI implements Extensible {
         console.setEditable(false);
         JPopupMenu popupMenu = new JPopupMenu();
         console.setComponentPopupMenu(popupMenu);
-        JMenuItem menuItem = new JMenuItem("Limpar");
+        JMenuItem menuItem = new JMenuItem("Clear");
         menuItem.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -548,7 +548,7 @@ public class MainUI implements Extensible {
         statusBar.add(addTip(button, "Set application language. Current locale: " + PluginManager.LOCALE.toString()));
         helpCheckBox = new JCheckBox();
         helpCheckBox.setSelected(true);
-        helpCheckBox.setToolTipText("Selecione para dicas");
+        helpCheckBox.setToolTipText("Select for tips");
         helpCheckBox.setFocusable(false);
         helpCheckBox.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -592,9 +592,7 @@ public class MainUI implements Extensible {
 
     private void show() {
         //centraliza a janela
-        Dimension screen = Toolkit.getDefaultToolkit().getScreenSize();
-        Rectangle frame = window.getBounds();
-        window.setLocation((screen.width - frame.width) / 2, (screen.height - frame.height) / 2);
+        window.setLocationRelativeTo(null);
         //torna a janela visivel
         window.setVisible(true);
     }
@@ -911,15 +909,15 @@ public class MainUI implements Extensible {
                 + ((platformVersion == null) ? "" : " | " + platformVersion) + " ]";
         window.setTitle(title);
 
-        //view menu
-        JMenu viewMenu = new JMenu(PluginManager.getText("s3f.viewmenu.name"));
-//        viewMenu.add();
-        menuBar.add(viewMenu);
-
-        //window menu
-        JMenu windowMenu = new JMenu(PluginManager.getText("s3f.windowmenu.name"));
-//        windowMenu.add();
-        menuBar.add(windowMenu);
+//        //view menu
+//        JMenu viewMenu = new JMenu(PluginManager.getText("s3f.viewmenu.name"));
+////        viewMenu.add();
+//        menuBar.add(viewMenu);
+//
+//        //window menu
+//        JMenu windowMenu = new JMenu(PluginManager.getText("s3f.windowmenu.name"));
+////        windowMenu.add();
+//        menuBar.add(windowMenu);
 
         //load singleton and factories from :
         List<Data> factoriesData = em.getAllData("s3f.guibuilder.*");
@@ -1017,8 +1015,8 @@ public class MainUI implements Extensible {
         S3FMenu.add(createThemesMenu());
         S3FMenu.addSeparator();
         JMenuItem i;
-        i = new JMenuItem(PluginManager.getText("s3f.item.about"));
-        S3FMenu.add(i);
+//        i = new JMenuItem(PluginManager.getText("s3f.item.about"));
+//        S3FMenu.add(i);
         menuBar.add(S3FMenu);
 
         //testes

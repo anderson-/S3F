@@ -36,6 +36,9 @@ import s3f.core.project.Project;
  */
 public class NewFileDialog extends JDialog {
 
+    private static Object lastCategorySelected;
+    private static Object lastFileTypeSelected;
+
     private Element selectedFileType;
     private JList categories;
     private JList filetypes;
@@ -285,11 +288,19 @@ public class NewFileDialog extends JDialog {
                 if (e.getValueIsAdjusting() == false) {
                     if (categories.getSelectedIndex() != -1) {
                         Element.CategoryData c = (Element.CategoryData) cModel.getElementAt(categories.getSelectedIndex());
+                        lastCategorySelected = c;
                         fModel.clear();
+                        boolean selected = false;
                         for (Element el : c.getModels()) {
                             fModel.addElement(el);
+                            if (el == lastFileTypeSelected) {
+                                filetypes.setSelectedValue(lastFileTypeSelected, true);
+                                selected = true;
+                            }
                         }
-                        filetypes.setSelectedIndex(0);
+                        if (!selected) {
+                            filetypes.setSelectedIndex(0);
+                        }
                         names.clear();
                         for (Element el : project.getElements(c.getName())) {
                             names.add(el.getName());
@@ -306,9 +317,17 @@ public class NewFileDialog extends JDialog {
                 if (e.getValueIsAdjusting() == false) {
                     if (filetypes.getSelectedIndex() != -1) {
                         Element el = (Element) fModel.getElementAt(filetypes.getSelectedIndex());
+                        lastFileTypeSelected = el;
                         ret[0] = el;
                         textfield.setText(el.getName());
                         caretListener.caretUpdate(null);
+                        SwingUtilities.invokeLater(new Runnable() {
+                            @Override
+                            public void run() {
+                                textfield.requestFocus();
+                                textfield.select(0, textfield.getText().length());
+                            }
+                        });
                     }
                 }
             }
@@ -316,7 +335,11 @@ public class NewFileDialog extends JDialog {
 
         textfield.addCaretListener(caretListener);
 
-        categories.setSelectedIndex(0);
+        if (lastCategorySelected != null) {
+            categories.setSelectedValue(lastCategorySelected, true);
+        } else {
+            categories.setSelectedIndex(0);
+        }
 
         final JDialog dialog = new JDialog((Frame) null, "Click a button", true);
 
@@ -344,7 +367,7 @@ public class NewFileDialog extends JDialog {
                     if (optionPane.getValue() == JOptionPane.UNINITIALIZED_VALUE) {
                         return;
                     }
-                    
+
                     if (optionPane.getValue() != options[0]) {
                         ret[0] = null;
                         ret[1] = null;

@@ -263,7 +263,6 @@ public class Project {
                             InputStream stream = zipFile.getInputStream(entry);
                             Element element = category.getStaticInstance().load(stream);
                             if (element != null) {
-                                System.out.println("new");
                                 entryName = entryName.substring(entryName.indexOf("/") + 1, entryName.lastIndexOf("."));
                                 element.setName(entryName);
                                 addElement(element);
