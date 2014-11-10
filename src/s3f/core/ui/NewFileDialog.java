@@ -6,25 +6,16 @@
 package s3f.core.ui;
 
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.ComponentAdapter;
-import java.awt.event.ComponentEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
-import java.io.File;
 import java.util.ArrayList;
-import java.util.HashMap;
 import javax.swing.*;
 import javax.swing.event.CaretEvent;
 import javax.swing.event.CaretListener;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
-import javax.swing.filechooser.FileSystemView;
 import s3f.core.plugin.EntityManager;
 import s3f.core.plugin.PluginManager;
 import s3f.core.project.Element;
@@ -148,9 +139,9 @@ public class NewFileDialog extends JDialog {
         JTextField textfield = new JTextField();
         tmpPanel2.add(label);
         tmpPanel2.add(textfield);
-        //tmpPanel2.setPreferredSize(new Dimension(300, 32));
+        //tmpPanel2.setPreferredSize(new Dimension(350, 32));
         panel.add(tmpPanel2);
-        tmpPanel.setPreferredSize(new Dimension(300, 180));
+        tmpPanel.setPreferredSize(new Dimension(350, 180));
 
         Object[] array = {msgString1, tmpPanel, tmpPanel2};
         //Object[] array = {msgString1, panel};
@@ -163,7 +154,7 @@ public class NewFileDialog extends JDialog {
         optionPane = new JOptionPane(array, JOptionPane.PLAIN_MESSAGE,
                 JOptionPane.YES_NO_OPTION, null, options, options[0]);
 
-        //optionPane.setPreferredSize(new Dimension(300, 400));
+        //optionPane.setPreferredSize(new Dimension(350, 400));
         // Make this dialog display it.
         setContentPane(optionPane);
 
@@ -248,9 +239,9 @@ public class NewFileDialog extends JDialog {
         final JTextField textfield = new JTextField();
         tmpPanel2.add(label);
         tmpPanel2.add(textfield);
-        //tmpPanel2.setPreferredSize(new Dimension(300, 32));
+        //tmpPanel2.setPreferredSize(new Dimension(350, 32));
         panel.add(tmpPanel2);
-        tmpPanel.setPreferredSize(new Dimension(300, 120));
+        tmpPanel.setPreferredSize(new Dimension(350, 120));
         final JLabel errorLabel = new JLabel(" ");
         errorLabel.setForeground(Color.red);
 
@@ -479,9 +470,9 @@ public class NewFileDialog extends JDialog {
         final JTextField textfield = new JTextField();
         tmpPanel2.add(label);
         tmpPanel2.add(textfield);
-        //tmpPanel2.setPreferredSize(new Dimension(300, 32));
+        //tmpPanel2.setPreferredSize(new Dimension(350, 32));
         panel.add(tmpPanel2);
-        tmpPanel.setPreferredSize(new Dimension(300, 120));
+        tmpPanel.setPreferredSize(new Dimension(350, 120));
         final JLabel errorLabel = new JLabel(" ");
         errorLabel.setForeground(Color.red);
 

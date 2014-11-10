@@ -100,6 +100,7 @@ import s3f.core.plugin.PluginManager;
 import s3f.core.project.Element;
 import s3f.core.project.Project;
 import s3f.core.project.ProjectTreeTab;
+import s3f.core.project.editormanager.TextFile;
 import s3f.core.script.MyJSConsole;
 import s3f.core.script.ScriptEnvironment;
 import s3f.core.simulation.SimulationUtils;
@@ -224,10 +225,14 @@ public class MainUI implements Extensible {
                 if (o[0] != null && o[1] != null) {
                     Element el = (Element) o[0];
                     String name = o[1].toString();
-                    el = (Element) el.createInstance();
-                    el.setName(name);
-                    project.addElement(el);
-                    projectTreeTab.createElement(el);
+                    Element newEl = (Element) el.createInstance();
+                    newEl.setName(name);
+                    //file template
+                    if (el instanceof TextFile && newEl instanceof TextFile){
+                        ((TextFile)newEl).setText(((TextFile)el).getText());
+                    }
+                    project.addElement(newEl);
+                    projectTreeTab.createElement(newEl);
                 }
             }
         };

@@ -26,7 +26,7 @@ public class Script extends SimpleElement implements TextFile, SimulableElement 
     private final JSInterpreter interpreter = new JSInterpreter(this);
 
     public Script() {
-        super("scry", "/resources/icons/fugue/script-text.png", JS_SCRIPTS, new Class[]{CodeEditorTab.class});
+        super("Empty Script", "/resources/icons/fugue/script-text.png", JS_SCRIPTS, new Class[]{CodeEditorTab.class});
     }
 
     @Override
