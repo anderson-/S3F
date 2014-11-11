@@ -10,14 +10,21 @@ import java.awt.Dimension;
 import java.awt.Image;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.ResourceBundle;
+import javax.swing.AbstractAction;
 import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
+import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JComponent;
 import javax.swing.JMenu;
+import javax.swing.JMenuItem;
 import javax.swing.JPanel;
+import javax.swing.JRadioButtonMenuItem;
 import javax.swing.JSeparator;
+import javax.swing.KeyStroke;
 import javax.swing.LookAndFeel;
 import javax.swing.SwingConstants;
 import s3f.core.plugin.Data;
@@ -70,7 +77,7 @@ public abstract class GUIBuilder implements Plugabble {
     public static String getWelcomePage() {
         return htmlWelcomePage;
     }
-    
+
     public static String getWelcomePageStyle() {
         return css;
     }
@@ -78,14 +85,20 @@ public abstract class GUIBuilder implements Plugabble {
     public final Data data;
     private ResourceBundle bundle;
 
-    public static class Element<T> implements Comparable<Element> {
+    private static class Element<T> implements Comparable<Element> {
 
-        private final int priority;
+        private final float priority;
         private final T t;
+        private final String[] path;
 
-        public Element(T t, int priority) {
+        public Element(T t, float priority) {
+            this(t, priority, null);
+        }
+
+        public Element(T t, float priority, String[] path) {
             this.priority = priority;
             this.t = t;
+            this.path = path;
         }
 
         @Override
@@ -99,16 +112,20 @@ public abstract class GUIBuilder implements Plugabble {
             return 0;
         }
 
-        public int getPriority() {
+        public float getPriority() {
             return priority;
         }
 
         public T getT() {
             return t;
         }
+
+        public String[] getPath() {
+            return path;
+        }
     }
 
-    private final ArrayList<Element<JMenu>> menus = new ArrayList<>();
+    private final ArrayList<Element<JMenuItem>> menus = new ArrayList<>();
     private final ArrayList<Element<Component>> toolbarComponents = new ArrayList<>();
     private final ArrayList<Element<Tab>> tabs = new ArrayList<>();
 
@@ -138,11 +155,69 @@ public abstract class GUIBuilder implements Plugabble {
         return bundle.getString(key);
     }
 
-    public void addMenubar(JMenu menu, int priority) {
-        menus.add(new Element<>(menu, priority));
+    public void removeMenuItem(String path) {
+        addMenuItem(path, null, null, null, null, 0, null);
     }
 
-    public void addToolbarComponent(Component toolbarComponent, int priority) {
+    public JMenuItem addMenuItem(String path, String mnemonic, String acceleratorKey, String iconPath, String toolTipText, float priority, AbstractAction action) {
+        String[] fullpath = path.split(">");
+        if (!path.endsWith("---")) {
+            for (Iterator<Element<JMenuItem>> it = menus.iterator(); it.hasNext();) {
+                Element e = it.next();
+                if (Arrays.equals(fullpath, e.getPath())) {
+                    it.remove();
+                    if (mnemonic == null || mnemonic.isEmpty()) {
+                        return null;
+                    } else {
+                        break;
+                    }
+                }
+            }
+        }
+
+        JMenuItem item;
+        if (path.endsWith(">")) {
+            item = new JMenu(fullpath[fullpath.length - 1]);
+        } else if (path.endsWith("*")) {
+            item = new JRadioButtonMenuItem(fullpath[fullpath.length - 1].replace("*", ""));
+        } else if (path.endsWith("+")) {
+            item = new JCheckBoxMenuItem(fullpath[fullpath.length - 1].replace("+", ""));
+        } else {
+            item = new JMenuItem(fullpath[fullpath.length - 1]);
+        }
+
+        if (mnemonic != null && !mnemonic.isEmpty()) {
+            item.setMnemonic(mnemonic.charAt(0));
+        }
+
+        if (action != null) {
+            action.putValue(AbstractAction.NAME, fullpath[fullpath.length - 1]);
+
+            if (iconPath != null && !iconPath.isEmpty()) {
+                action.putValue(AbstractAction.SMALL_ICON, new ImageIcon(GUIBuilder.class.getResource(iconPath)));
+            }
+
+            if (toolTipText != null && !toolTipText.isEmpty()) {
+                action.putValue(AbstractAction.SHORT_DESCRIPTION, toolTipText);
+            }
+
+            if (mnemonic != null && !mnemonic.isEmpty()) {
+                action.putValue(AbstractAction.MNEMONIC_KEY, KeyStroke.getKeyStroke(mnemonic).getKeyCode());
+            }
+
+            if (acceleratorKey != null && !acceleratorKey.isEmpty()) {
+                //item.setAccelerator(KeyStroke.getKeyStroke("control alt P"));
+                action.putValue(AbstractAction.ACCELERATOR_KEY, KeyStroke.getKeyStroke(acceleratorKey));
+            }
+
+            item.setAction(action);
+        }
+
+        menus.add(new Element<>(item, priority, fullpath));
+        return item;
+    }
+
+    public void addToolbarComponent(Component toolbarComponent, float priority) {
         toolbarComponents.add(new Element<>(toolbarComponent, priority));
     }
 
@@ -151,13 +226,37 @@ public abstract class GUIBuilder implements Plugabble {
         data.addChild(tab.getData());
     }
 
-    public ArrayList<JMenu> getMenus() {
-        Collections.sort(menus);
-        ArrayList<JMenu> a = new ArrayList<>();
-        for (Element<JMenu> o : menus) {
-            a.add(o.t);
+    private ArrayList<JMenuItem> buildMenus(JMenuItem menu, int depth, String[] path, ArrayList<JMenuItem> list) {
+        for (Element<JMenuItem> o : menus) {
+            if (o.path.length == depth + 1) {
+                buildMenus(o.t, depth + 1, o.path, list);
+                if (o.path.length == 1) {
+                    list.add(o.t);
+                } else if (Arrays.equals(Arrays.copyOfRange(path, 0, depth), Arrays.copyOfRange(o.path, 0, depth))) {
+                    if (menu != null) {
+                        if (menu instanceof JMenu && o.t.getText().equals("---")) {
+                            ((JMenu) menu).addSeparator();
+                        } else {
+                            menu.add(o.t);
+                        }
+                    } else {
+                        throw new Error();
+                    }
+                }
+            }
         }
-        return a;
+        return list;
+    }
+
+    public ArrayList<JMenuItem> getMenus() {
+        Collections.sort(menus);
+        ArrayList<JMenuItem> mainMenus = buildMenus(null, 0, null, new ArrayList<JMenuItem>());
+        for (Element<JMenuItem> o : menus) {
+            if (o.t instanceof JMenu) {
+                ((JMenu) o.t).setEnabled(((JMenu) o.t).getItemCount() > 0);
+            }
+        }
+        return mainMenus;
     }
 
     public ArrayList<Component> getToolbarComponents(boolean left, int threshold) {

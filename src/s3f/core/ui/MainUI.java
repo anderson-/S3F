@@ -299,7 +299,7 @@ public class MainUI implements Extensible {
         Boolean old = UIManager.getBoolean("FileChooser.readOnly");
         UIManager.put("FileChooser.readOnly", Boolean.TRUE);
         fileChooser = new JFileChooser();
-        String path = System.getProperty("user.home") + "/S3F/" + PluginManager.getInstance().createFactoryManager(null).getData("s3f").getProperty("platform_name").toString();
+        String path = System.getProperty("user.home") + "/S3F/" + PluginManager.getInstance().createFactoryManager(null).getData("s3f").getProperty("platform_name");
         fileChooser.setCurrentDirectory(new java.io.File(path));
         UIManager.put("FileChooser.readOnly", old);
         fileChooser.setAcceptAllFileFilterUsed(false);
@@ -943,7 +943,73 @@ public class MainUI implements Extensible {
                 }
             }
 
-            for (JMenu o : builder.getMenus()) {
+            builder.addMenuItem("File>", "F", null, null, null, 0, null);
+            builder.addMenuItem("Edit>", "E", null, null, null, 1, null);
+            builder.addMenuItem("View>", "V", null, null, null, 2, null);
+//            builder.addMenuItem("Document");
+//            builder.addMenuItem("Simulation");
+//            builder.addMenuItem("Run");
+            builder.addMenuItem("Tools>", "T", null, null, null, 6, null);
+            builder.addMenuItem("Windows>", "W", null, null, null, 7, null);
+            builder.addMenuItem("Help>", "H", null, null, null, 8, null);
+
+            //use ... on dialog to the user
+            
+            builder.addMenuItem("File>New Project", "W", "control shift N", "/resources/icons/fugue/box--plus.png", "Cria um novo projeto", 0, newProject);
+            builder.addMenuItem("File>New Document...", "N", "control N", "/resources/icons/fugue/document--plus.png", "Cria um novo documento", 1, newDocument);
+            builder.addMenuItem("File>---", null, null, null, null, 2, null);
+            builder.addMenuItem("File>Open Project...", "O", "control O", null, null, 2, openProject);
+            builder.addMenuItem("File>---", null, null, null, null, 2, null);
+            //builder.addMenuItem("File>Save Project", "X", null, null, null, 2, null);
+            builder.addMenuItem("File>Save Project As...", "S", "control S", null, null, 2, saveProject);
+//            builder.addMenuItem("File>---", null, null, null, null, 2, null);
+//            builder.addMenuItem("File>Import File...", "I", null, null, null, 2, null);
+//            builder.addMenuItem("File>Export File...", "X", null, null, null, 2, null);
+            builder.addMenuItem("File>---", null, null, null, null, 2, null);
+            builder.addMenuItem("File>Exit", "X", null, null, null, 2, null).setEnabled(false);
+
+            /* Examples */
+            /*
+            
+             item : A>B>C>Test
+             menu : A>B>C>Test>
+             checkbox : A>B>C>Test+
+             radiobutton : A>B>C>Test* (and latter create a ButtonGroup manually)
+             separator : A>B>C>---
+            
+             */
+//            builder.addMenuItem("File>Checkbox+", null, null, null, null, 2, null);
+//            JMenuItem ra = builder.addMenuItem("File>RadioButton A*", null, null, null, null, 3, null);
+//            JMenuItem rb = builder.addMenuItem("File>RadioButton B*", null, null, null, null, 4, null);
+//            JMenuItem rc = builder.addMenuItem("File>RadioButton C*", null, null, null, null, 5, null);
+//            ButtonGroup group = new ButtonGroup();
+//            group.add(ra);
+//            group.add(rb);
+//            group.add(rc);
+//            builder.addMenuItem("A>", null, null, null, null, 0, null);
+//            builder.addMenuItem("A>1", null, null, null, null, 0, null);
+//            builder.addMenuItem("A>2>", null, null, null, null, 0, null);
+//            builder.addMenuItem("A>2>21", null, null, null, null, 0, null);
+//            builder.addMenuItem("A>2>22", null, null, null, null, 0, null);
+//            builder.addMenuItem("A>3", null, null, null, null, 0, null);
+//            builder.addMenuItem("B>", null, null, null, null, 0, null);
+//            builder.addMenuItem("B>4", null, null, null, null, 0, null);
+//            builder.addMenuItem("B>5", null, null, null, null, 0, null);
+//            builder.addMenuItem("B>6>", null, null, null, null, 0, null);
+//            builder.addMenuItem("B>6>61", null, null, null, null, 0, null);
+//            builder.addMenuItem("B>6>62", null, null, null, null, 0, null);
+//            builder.addMenuItem("C>", null, null, null, null, 0, null);
+//            builder.addMenuItem("C>7>", null, null, null, null, 0, null);
+//            builder.addMenuItem("C>7>71", null, null, null, null, 0, null);
+//            builder.addMenuItem("C>7>72>", null, null, null, null, 0, null);
+//            builder.addMenuItem("C>7>72>721", null, null, null, null, 0, null);
+//            builder.addMenuItem("C>7>72>722", null, null, null, null, 0, null);
+//            builder.addMenuItem("C>7>72>---", null, null, null, null, 0, null);
+//            builder.addMenuItem("C>7>72>723", null, null, null, null, 0, null);
+//            builder.addMenuItem("C>7>73", null, null, null, null, 0, null);
+//            builder.addMenuItem("C>8", null, null, null, null, 0, null);
+//            builder.addMenuItem("C>9", null, null, null, null, 0, null);
+            for (JMenuItem o : builder.getMenus()) {
                 menuBar.add(o);
             }
 
@@ -978,7 +1044,6 @@ public class MainUI implements Extensible {
             toolBarPanel.add(p);
 
             for (Component o : builder.getToolbarComponents(false, 500)) {
-                System.out.println("*");
                 toolBarPanel.add(o);
                 tmpWidth += o.getPreferredSize().width;
             }
