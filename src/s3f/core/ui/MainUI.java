@@ -228,8 +228,8 @@ public class MainUI implements Extensible {
                     Element newEl = (Element) el.createInstance();
                     newEl.setName(name);
                     //file template
-                    if (el instanceof TextFile && newEl instanceof TextFile){
-                        ((TextFile)newEl).setText(((TextFile)el).getText());
+                    if (el instanceof TextFile && newEl instanceof TextFile) {
+                        ((TextFile) newEl).setText(((TextFile) el).getText());
                     }
                     project.addElement(newEl);
                     projectTreeTab.createElement(newEl);
@@ -299,6 +299,8 @@ public class MainUI implements Extensible {
         Boolean old = UIManager.getBoolean("FileChooser.readOnly");
         UIManager.put("FileChooser.readOnly", Boolean.TRUE);
         fileChooser = new JFileChooser();
+        String path = System.getProperty("user.home") + "/S3F/" + PluginManager.getInstance().createFactoryManager(null).getData("s3f").getProperty("platform_name").toString();
+        fileChooser.setCurrentDirectory(new java.io.File(path));
         UIManager.put("FileChooser.readOnly", old);
         fileChooser.setAcceptAllFileFilterUsed(false);
         fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
@@ -923,7 +925,6 @@ public class MainUI implements Extensible {
 //        JMenu windowMenu = new JMenu(PluginManager.getText("s3f.windowmenu.name"));
 ////        windowMenu.add();
 //        menuBar.add(windowMenu);
-
         //load singleton and factories from :
         List<Data> factoriesData = em.getAllData("s3f.guibuilder.*");
 
