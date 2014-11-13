@@ -20,7 +20,7 @@ public class UI extends GUIBuilder {
 
     @Override
     public void init() {
-        this.addToolbarComponent(new JButton("J"), 600);
+//        this.addToolbarComponent(new JButton("J"), 600);
     }
     
 }

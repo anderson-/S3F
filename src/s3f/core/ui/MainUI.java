@@ -1054,7 +1054,7 @@ public class MainUI implements Extensible {
             componentListener = new ComponentListener() {
                 @Override
                 public void componentResized(ComponentEvent e) {
-                    p.setPreferredSize(new Dimension(window.getWidth() - width - 200, toolbarHeight));
+                    p.setPreferredSize(new Dimension(window.getWidth() - width - 30, toolbarHeight));
                     toolBarPanel.updateUI();
                 }
 
