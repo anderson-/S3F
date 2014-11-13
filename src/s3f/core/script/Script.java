@@ -5,14 +5,22 @@
  */
 package s3f.core.script;
 
+import java.awt.event.ActionEvent;
+import javax.script.Invocable;
+import javax.script.ScriptException;
+import javax.swing.AbstractAction;
 import javax.swing.ImageIcon;
 import s3f.core.code.CodeEditorTab;
 import s3f.core.plugin.Plugabble;
+import s3f.core.plugin.PluginManager;
 import s3f.core.plugin.SimulableElement;
+import s3f.core.project.Editor;
 import s3f.core.project.Element;
 import s3f.core.project.SimpleElement;
 import s3f.core.project.editormanager.TextFile;
 import s3f.core.simulation.System;
+import s3f.core.ui.GUIBuilder;
+import s3f.core.ui.MainUI;
 
 /**
  *
@@ -21,7 +29,7 @@ import s3f.core.simulation.System;
 public class Script extends SimpleElement implements TextFile, SimulableElement {
 
     public static final Element.CategoryData JS_SCRIPTS = new Element.CategoryData("Scripts", "js", new ImageIcon(Script.class.getResource("/resources/icons/fugue/scripts-text.png")), new Script());
-    
+
     private String script;
     private final JSInterpreter interpreter = new JSInterpreter(this);
 
@@ -48,4 +56,41 @@ public class Script extends SimpleElement implements TextFile, SimulableElement 
     public System getSystem() {
         return interpreter;
     }
+
+    @Override
+    public void setCurrentEditor(Editor editor) {
+        super.setCurrentEditor(editor);
+        GUIBuilder gui = new GUIBuilder("Script") {
+
+            @Override
+            public void init() {
+                final AbstractAction runScript = new AbstractAction() {
+                    @Override
+                    public void actionPerformed(ActionEvent ae) {
+                        new Thread() {
+                            @Override
+                            public void run() {
+                                try {
+                                    ScriptManager.runScript(Script.this.getText(), "js", null);
+                                } catch (ScriptException ex) {
+                                    ex.printStackTrace();
+                                }
+                            }
+                        }.start();
+                    }
+                };
+
+                addMenuItem("Run>", "S", null, null, null, 4, null);
+                addMenuItem("Run>Run script", "R", "F6", null, null, 0, runScript);
+            }
+
+        };
+        java.lang.System.out.println("UP");
+        PluginManager pm = PluginManager.getInstance();
+        
+        pm.registerFactory(gui);
+        
+        pm.createFactoryManager(MainUI.getInstance());
+    }
+
 }

@@ -907,7 +907,7 @@ public class MainUI implements Extensible {
     @Override
     public void loadModulesFrom(EntityManager em) {
 
-        //pm.PRINT_TEST();
+        PluginManager.getInstance().printTree(System.out);
         String platformName = em.getData("s3f").getProperty("platform_name");
         String platformVersion = em.getData("s3f").getProperty("platform_version");
 
@@ -946,6 +946,8 @@ public class MainUI implements Extensible {
             builder.addMenuItem("File>", "F", null, null, null, 0, null);
             builder.addMenuItem("Edit>", "E", null, null, null, 1, null);
             builder.addMenuItem("View>", "V", null, null, null, 2, null);
+
+            builder.addMenuItem("Run>", "S", null, null, null, 4, null);
 //            builder.addMenuItem("Document");
 //            builder.addMenuItem("Simulation");
 //            builder.addMenuItem("Run");
@@ -954,7 +956,6 @@ public class MainUI implements Extensible {
             builder.addMenuItem("Help>", "H", null, null, null, 8, null);
 
             //use ... on dialog to the user
-            
             builder.addMenuItem("File>New Project", "W", "control shift N", "/resources/icons/fugue/box--plus.png", "Cria um novo projeto", 0, newProject);
             builder.addMenuItem("File>New Document...", "N", "control N", "/resources/icons/fugue/document--plus.png", "Cria um novo documento", 1, newDocument);
             builder.addMenuItem("File>---", null, null, null, null, 2, null);
@@ -1009,6 +1010,7 @@ public class MainUI implements Extensible {
 //            builder.addMenuItem("C>7>73", null, null, null, null, 0, null);
 //            builder.addMenuItem("C>8", null, null, null, null, 0, null);
 //            builder.addMenuItem("C>9", null, null, null, null, 0, null);
+            menuBar.removeAll();
             for (JMenuItem o : builder.getMenus()) {
                 menuBar.add(o);
             }
