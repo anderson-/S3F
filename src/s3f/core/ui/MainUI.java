@@ -37,6 +37,8 @@ import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
@@ -127,6 +129,7 @@ public class MainUI implements Extensible {
     private RootWindowProperties properties = new RootWindowProperties();
     private JToolBar statusBar;
     private JLabel statusLabel;
+    private JTextArea console;
     private PluginConfigurationWindow pluginConfigurationWindow = null;
     private MyJSConsole terminal = null;
     //actions
@@ -168,6 +171,18 @@ public class MainUI implements Extensible {
         ConfigurableObject o = new ConfigurableObject("s3f.core.project");
         o.getData().setProperty("project", project);
         pm.registerFactory(o);
+    }
+
+    public PrintStream getConsole() {
+        return new PrintStream(new OutputStream() {
+            @Override
+            public void write(int b) throws IOException {
+                // redirects data to the text area
+                console.append(String.valueOf((char) b));
+                // scrolls the text area to the end of data
+                console.setCaretPosition(console.getDocument().getLength());
+            }
+        });
     }
 
     private void createActions() {
@@ -412,7 +427,7 @@ public class MainUI implements Extensible {
                 (Component) projectTreeTab.getData().getProperty(TabProperty.COMPONENT)
         );
 
-        final JTextArea console = new JTextArea();
+        console = new JTextArea();
         console.setEditable(false);
         JPopupMenu popupMenu = new JPopupMenu();
         console.setComponentPopupMenu(popupMenu);
@@ -700,8 +715,12 @@ public class MainUI implements Extensible {
             view.addComponentListener((ComponentListener) component);
         }
 
-        if (obj instanceof DockingWindowListener) {
-            view.addListener((DockingWindowListener) obj);
+        if (order == 1 && obj instanceof DockingWindowListener) {
+            DockingWindowListener dockingWindowListener = (DockingWindowListener) obj;
+            view.addListener(dockingWindowListener);
+            if (firstTabWindow.getChildWindowCount() == 0) {
+                dockingWindowListener.windowShown(view);
+            }
         }
 
         return addView(order, view);
@@ -906,8 +925,8 @@ public class MainUI implements Extensible {
 
     @Override
     public void loadModulesFrom(EntityManager em) {
-
-        PluginManager.getInstance().printTree(System.out);
+//        System.out.println("MainUI printTree:");
+//        PluginManager.getInstance().printTree(System.out);
         String platformName = em.getData("s3f").getProperty("platform_name");
         String platformVersion = em.getData("s3f").getProperty("platform_version");
 

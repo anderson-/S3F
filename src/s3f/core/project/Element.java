@@ -88,5 +88,7 @@ public interface Element extends Plugabble {
     public Element load(InputStream stream);
 
     public void setCurrentEditor(Editor editor);
+    
+    public Editor getCurrentEditor();
 
 }

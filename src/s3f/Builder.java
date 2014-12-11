@@ -5,9 +5,12 @@
  */
 package s3f;
 
+import s3f.core.code.CodeEditorTab;
 import s3f.core.plugin.ConfigurableObject;
+import s3f.core.plugin.Data;
 import s3f.core.plugin.PluginBuilder;
 import s3f.core.plugin.PluginManager;
+import s3f.core.project.EditableProperty;
 import s3f.core.project.editormanager.PlainTextFile;
 import s3f.core.script.Script;
 import s3f.core.simulation.MultiThreadSimulator;
@@ -26,6 +29,9 @@ public class Builder extends PluginBuilder {
     public void init() {
         pm.registerFactory(Script.JS_SCRIPTS);
         pm.registerFactory(PlainTextFile.PLAIN_TEXT_FILES);
+        
+        EditableProperty.put(Script.JS_SCRIPTS.getData(), CodeEditorTab.class);
+        EditableProperty.put(PlainTextFile.PLAIN_TEXT_FILES.getData(), CodeEditorTab.class);
         
         PlainTextFile plainTextFile = new PlainTextFile();
         plainTextFile.setName("hellow");

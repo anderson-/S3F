@@ -26,12 +26,11 @@ import s3f.core.ui.MainUI;
  *
  * @author antunes
  */
-public class Script extends SimpleElement implements TextFile, SimulableElement {
+public class Script extends SimpleElement implements TextFile {
 
     public static final Element.CategoryData JS_SCRIPTS = new Element.CategoryData("Scripts", "js", new ImageIcon(Script.class.getResource("/resources/icons/fugue/scripts-text.png")), new Script());
 
     private String script;
-    private final JSInterpreter interpreter = new JSInterpreter(this);
 
     public Script() {
         super("Empty Script", "/resources/icons/fugue/script-text.png", JS_SCRIPTS, new Class[]{CodeEditorTab.class});
@@ -53,43 +52,34 @@ public class Script extends SimpleElement implements TextFile, SimulableElement 
     }
 
     @Override
-    public System getSystem() {
-        return interpreter;
-    }
-
-    @Override
     public void setCurrentEditor(Editor editor) {
         super.setCurrentEditor(editor);
-        GUIBuilder gui = new GUIBuilder("Script") {
-
+        GUIBuilder gui = new GUIBuilder("Script Interpreter GUI Builder") {
             @Override
             public void init() {
                 final AbstractAction runScript = new AbstractAction() {
                     @Override
                     public void actionPerformed(ActionEvent ae) {
-                        new Thread() {
-                            @Override
-                            public void run() {
-                                try {
-                                    ScriptManager.runScript(Script.this.getText(), "js", null);
-                                } catch (ScriptException ex) {
-                                    ex.printStackTrace();
-                                }
-                            }
-                        }.start();
+                        ScriptManager.runScript(Script.this, "js", null);
                     }
                 };
-
                 addMenuItem("Run>", "S", null, null, null, 4, null);
                 addMenuItem("Run>Run script", "R", "F6", null, null, 0, runScript);
+
+                addMenuItem("Run>Stop script", "S", "ESCAPE", null, null, 0, new AbstractAction() {
+
+                    @Override
+                    public void actionPerformed(ActionEvent ae) {
+                        ScriptManager.kill();
+                    }
+                });
             }
 
         };
-        java.lang.System.out.println("UP");
+        
+        //force GUI rebuild
         PluginManager pm = PluginManager.getInstance();
-        
         pm.registerFactory(gui);
-        
         pm.createFactoryManager(MainUI.getInstance());
     }
 

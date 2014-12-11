@@ -73,6 +73,7 @@ public interface Tab extends Configurable {
     
     public void update();
     
+    @Deprecated //Not working extend DockingWindowAdapter instead
     public void selected();
 
 }

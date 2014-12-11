@@ -239,7 +239,8 @@ public class ProjectTreeTab implements Tab, Extensible {
                                 });
                                 menu.add(item);
 
-                                Collection<Class<? extends Editor>> editors = element.getData().getProperty(EditableProperty.EDITORS);
+                                Collection<Class<? extends Editor>> editors = PluginManager.getInstance().createFactoryManager(null).getData("s3f.core.project.category." + element.getCategoryData().getName() + "Category").getProperty(EditableProperty.EDITORS);
+//                                Collection<Class<? extends Editor>> editors = element.getData().getProperty(EditableProperty.EDITORS);
                                 if (editors != null && !editors.isEmpty()) {
                                     item = new JMenu("open with...");
                                     for (final Class<? extends Editor> ce : editors) {
@@ -250,7 +251,7 @@ public class ProjectTreeTab implements Tab, Extensible {
                                                 try {
                                                     createElement(element, (Editor) ce.newInstance());
                                                 } catch (Exception ex) {
-                                                    System.out.println("invalid class:" + ex.getMessage());
+                                                    ex.printStackTrace();
                                                 }
                                             }
                                         });

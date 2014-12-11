@@ -43,6 +43,7 @@ public class FileCreator {
         return file;
     }
 
+    @Deprecated //SimpleElement and TextFile combined save text files easily
     public void makeTextFile(String name, String extension, StringBuilder sb) {
         FileWriter fw = null;
         try {

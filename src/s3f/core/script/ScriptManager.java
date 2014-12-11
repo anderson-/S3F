@@ -5,12 +5,15 @@
  */
 package s3f.core.script;
 
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.script.Invocable;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineFactory;
@@ -19,8 +22,17 @@ import javax.script.ScriptException;
 import javax.script.SimpleBindings;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
+import javax.swing.text.BadLocationException;
+import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
+import org.fife.ui.rsyntaxtextarea.RSyntaxTextAreaHighlighter;
+import org.fife.ui.rsyntaxtextarea.SquiggleUnderlineHighlightPainter;
+import s3f.core.code.CodeEditorTab;
+import s3f.core.project.Editor;
+import s3f.core.project.editormanager.TextFile;
 
 public class ScriptManager {
+
+    private static Thread running = null;
 
     private static List<String> history = new ArrayList<>();
     private static ScriptEngineManager SEE = new ScriptEngineManager();
@@ -40,11 +52,14 @@ public class ScriptManager {
         return new ArrayList(history);
     }
 
-    public static Invocable runScript(String script, String extension, Map<String, Object> env) throws ScriptException {
+    public static Invocable runScript(final TextFile script, String extension, Map<String, Object> env) {
+        if (running != null) {
+            throw new RuntimeException("Already running a script!");
+        }
         history.add(Arrays.toString(new Throwable().getStackTrace()));
 
         ScriptEngineManager mgr = new ScriptEngineManager();
-        ScriptEngine engine = mgr.getEngineByExtension(extension);
+        final ScriptEngine engine = mgr.getEngineByExtension(extension);
 
         if (env != null) {
             for (Map.Entry<String, Object> e : env.entrySet()) {
@@ -52,9 +67,65 @@ public class ScriptManager {
             }
         }
 
-        engine.eval(script);
+        running = new Thread() {
+            @Override
+            public void run() {
+                try {
+                    engine.eval(script.getText());
+                } catch (ScriptException ex) {
+                    if (script.getCurrentEditor() == null) {
+                        System.out.println(ex.getMessage());
+                    } else {
+                        Editor currentEditor = script.getCurrentEditor();
+                        if (currentEditor instanceof CodeEditorTab) {
+                            CodeEditorTab codeEditorTab = (CodeEditorTab) currentEditor;
+                            try {
+                                RSyntaxTextArea textArea = codeEditorTab.getTextArea();
+                                RSyntaxTextAreaHighlighter highlighter = (RSyntaxTextAreaHighlighter) textArea.getHighlighter();
+
+                                SquiggleUnderlineHighlightPainter parserErrorHighlightPainter = new SquiggleUnderlineHighlightPainter(Color.RED);
+
+                                String msg = ex.getMessage();
+                                msg = msg.substring(msg.lastIndexOf("at line number "));
+                                int errorOnLine = Integer.parseInt(msg);
+
+                                int p0 = textArea.getLineStartOffset(errorOnLine - 1);
+
+                                int p1 = textArea.getLineEndOffset(errorOnLine - 1);
+                                String line = textArea.getText(p0, p1 - p0);
+
+                                for (char c : line.toCharArray()) {
+                                    if (c == ' ' || c == '\t') {
+                                        p0++;
+                                    } else {
+                                        break;
+                                    }
+                                }
+                                //todo tirar tabs e espaços
+                                highlighter.removeAllHighlights();
+                                highlighter.addHighlight(p0, p1, parserErrorHighlightPainter);
+                            } catch (BadLocationException | NumberFormatException e) {
+                            }
+                        }
+                    }
+
+                } finally {
+                    running = null;
+                }
+            }
+        };
+        running.start();
 
         return (Invocable) engine;
+    }
+
+    public static void kill() {
+        if (running != null) {
+            running.stop();
+            if (running != null) {
+                throw new RuntimeException("Failed to kill process!");
+            }
+        }
     }
 
     public static void performActions(Invocable inv) {

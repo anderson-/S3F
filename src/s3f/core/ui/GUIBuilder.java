@@ -286,6 +286,14 @@ public abstract class GUIBuilder implements Plugabble {
     }
 
     public void append(GUIBuilder guibuilder) {
+        for (Element e : menus) {
+            for (Iterator<Element<JMenuItem>> j = guibuilder.menus.iterator(); j.hasNext();) {
+                Element f = j.next();
+                if (Arrays.equals(f.getPath(), e.getPath())) {
+                    j.remove();
+                }
+            }
+        }
         menus.addAll(guibuilder.menus);
         toolbarComponents.addAll(guibuilder.toolbarComponents);
         tabs.addAll(guibuilder.tabs);

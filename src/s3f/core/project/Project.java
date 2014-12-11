@@ -25,16 +25,21 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Enumeration;
+import java.util.Iterator;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
 import s3f.core.plugin.PluginManager;
 import s3f.core.project.Element.CategoryData;
+import s3f.core.project.editormanager.PlainTextFile;
 import s3f.core.ui.tab.Tab;
 import s3f.util.toml.impl.Toml;
 //import robotinterface.algorithm.parser.Parser;
@@ -242,19 +247,68 @@ public class Project {
         importZip(path);
     }
 
+    //closes stream
+    private static boolean isBinaryFile(InputStream in) throws IOException {
+        int size = in.available();
+        if (size > 1024) {
+            size = 1024;
+        }
+        byte[] data = new byte[size];
+        in.read(data);
+        in.close();
+
+        int ascii = 0;
+        int other = 0;
+
+        for (int i = 0; i < data.length; i++) {
+            byte b = data[i];
+            if (b < 0x09) {
+                return true;
+            }
+
+            if (b == 0x09 || b == 0x0A || b == 0x0C || b == 0x0D) {
+                ascii++;
+            } else if (b >= 0x20 && b <= 0x7E) {
+                ascii++;
+            } else {
+                other++;
+            }
+        }
+
+        if (other == 0) {
+            return false;
+        }
+
+        return 100 * other / (ascii + other) > 95;
+    }
+
     private void importZip(String path) {
+
+        ZipFile zipFile;
         try {
-            ZipFile zipFile = new ZipFile(path);
+            zipFile = new ZipFile(path);
+        } catch (IOException ex) {
+            System.out.println("Invalid project file.");
+            return;
+        }
 
-            Enumeration<? extends ZipEntry> entries = zipFile.entries();
+        Enumeration<? extends ZipEntry> entries = zipFile.entries();
 
-            while (entries.hasMoreElements()) {
-                ZipEntry entry = entries.nextElement();
+        ArrayList<ZipEntry> tmpEntriesList = new ArrayList<>();
+
+        while (entries.hasMoreElements()) {
+            ZipEntry entry = entries.nextElement();
+            tmpEntriesList.add(entry);
+        }
+
+        for (Iterator<ZipEntry> it = tmpEntriesList.iterator(); it.hasNext();) {
+            try {
+                ZipEntry entry = it.next();
                 String entryName = entry.getName();
-
                 if (entryName.startsWith("project/") && entryName.endsWith("toml")) {
                     InputStream stream = zipFile.getInputStream(entry);
                     loadConfigurationFile(stream);
+                    it.remove();
                 } else {
                     List<Element.CategoryData> categories = PluginManager.getInstance().createFactoryManager(null).getEntities("s3f.core.project.category.*", Element.CategoryData.class);
                     for (CategoryData category : categories) {
@@ -267,15 +321,37 @@ public class Project {
                                 element.setName(entryName);
                                 addElement(element);
                             }
+                            it.remove();
                             break;
                         }
                     }
                 }
+            } catch (IOException ex) {
+                ex.printStackTrace();
             }
-
-        } catch (Exception ex) {
-            ex.printStackTrace();
         }
+
+        System.out.println(tmpEntriesList.size() + " unknown type files.");
+        PlainTextFile plainTextFileFactory = new PlainTextFile();
+        for (ZipEntry entry : tmpEntriesList) {
+            String entryName = entry.getName();
+            if (entry.isDirectory()) {
+                continue;
+            }
+            try {
+                InputStream stream = zipFile.getInputStream(entry);
+                if (!isBinaryFile(stream)) {
+                    stream = zipFile.getInputStream(entry);
+                    Element element = plainTextFileFactory.load(stream);
+                    entryName = entryName.substring(entryName.indexOf("/") + 1, entryName.lastIndexOf("."));
+                    element.setName(entryName);
+                    addElement(element);
+                }
+            } catch (IOException ex) {
+                System.out.println("File " + entry.getName() + " could not be read.");
+            }
+        }
+
     }
 
     public static Project createProject(String path) {

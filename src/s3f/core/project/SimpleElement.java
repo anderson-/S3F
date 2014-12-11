@@ -103,6 +103,7 @@ public abstract class SimpleElement implements Element {
         this.editor = editor;
     }
 
+    @Override
     public Editor getCurrentEditor() {
         return editor;
     }

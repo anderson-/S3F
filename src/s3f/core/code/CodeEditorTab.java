@@ -23,12 +23,16 @@ package s3f.core.code;
 
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.event.ActionEvent;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
+import javax.swing.AbstractAction;
 import javax.swing.ImageIcon;
 import javax.swing.KeyStroke;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
+import net.infonode.docking.DockingWindow;
+import net.infonode.docking.DockingWindowAdapter;
 import org.fife.ui.autocomplete.AutoCompletion;
 import org.fife.ui.autocomplete.BasicCompletion;
 import org.fife.ui.autocomplete.Completion;
@@ -49,12 +53,13 @@ import s3f.core.project.Editor;
 import s3f.core.project.Element;
 import s3f.core.project.ProjectTreeTab;
 import s3f.core.project.editormanager.TextFile;
-import s3f.core.script.JSInterpreter;
 import s3f.core.script.Script;
-import s3f.core.simulation.Simulator;
+import s3f.core.script.ScriptManager;
+import s3f.core.ui.GUIBuilder;
+import s3f.core.ui.MainUI;
 import s3f.core.ui.tab.TabProperty;
 
-public class CodeEditorTab implements Editor {
+public class CodeEditorTab extends DockingWindowAdapter implements Editor {
 
     private static final ImageIcon ICON = new ImageIcon(ProjectTreeTab.class.getResource("/resources/icons/fugue/script-text.png"));
 
@@ -75,6 +80,7 @@ public class CodeEditorTab implements Editor {
     private Component tabComponent;
     //private static final ArrayList<Class> functionTokenClass = new ArrayList<>();
     //private static final ArrayList<FunctionToken> functionTokenInstances = new ArrayList<>();
+    private TextFile textFile;
 
     public CodeEditorTab() {
         this("plain");
@@ -140,6 +146,7 @@ public class CodeEditorTab implements Editor {
 
     public void setText(String text) {
         textArea.setText(text);
+        textArea.setCaretPosition(0);
     }
 
     public RSyntaxTextArea getTextArea() {
@@ -276,8 +283,9 @@ public class CodeEditorTab implements Editor {
     @Override
     public void setContent(Element content) {
         if (content instanceof TextFile) {
-            final TextFile textFile = (TextFile) content;
+            textFile = (TextFile) content;
             textArea.setText(textFile.getText());
+            textArea.setCaretPosition(0);
             //TODO: substituir por um contador de 500ms apos a utltima modificacao
             textArea.getDocument().addDocumentListener(new DocumentListener() {
                 @Override
@@ -293,7 +301,7 @@ public class CodeEditorTab implements Editor {
                     textFile.setText(textArea.getText());
                 }
             });
-            
+
             switch (content.getCategoryData().getExtension()) {
                 case "js":
                     setLanguage("javascript");
@@ -316,10 +324,16 @@ public class CodeEditorTab implements Editor {
     public void update() {
 
     }
-
+    
+    @Override
+    public void windowShown(DockingWindow dw) {
+        //used by Script to change the GUI
+        textFile.setCurrentEditor(this);
+    }
+    
     @Override
     public void selected() {
-
+        
     }
 
 }
