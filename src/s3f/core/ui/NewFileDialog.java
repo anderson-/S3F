@@ -332,7 +332,7 @@ public class NewFileDialog extends JDialog {
             categories.setSelectedIndex(0);
         }
 
-        final JDialog dialog = new JDialog((Frame) null, "Click a button", true);
+        final JDialog dialog = new JDialog((Frame) null, "New document", true);
 
         dialog.setContentPane(optionPane);
 
@@ -522,7 +522,7 @@ public class NewFileDialog extends JDialog {
 
         categories.setSelectedIndex(
                 0);
-        final JDialog dialog = new JDialog((Frame) null, "Click a button", true);
+        final JDialog dialog = new JDialog((Frame) null, "New document", true);
 
         dialog.setContentPane(optionPane);
 

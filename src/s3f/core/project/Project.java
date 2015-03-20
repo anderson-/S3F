@@ -77,7 +77,7 @@ public class Project {
         }
     }
 
-    private Element getElement(String path) {
+    public Element getElement(String path) {
         String category = path.substring(0, path.indexOf('/'));
         String eName = path.substring(path.indexOf('/') + 1);
         for (Element element : getElements(category)) {

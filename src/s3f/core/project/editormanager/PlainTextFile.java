@@ -19,7 +19,7 @@ import s3f.core.project.SimpleElement;
  */
 public class PlainTextFile extends SimpleElement implements TextFile {
 
-    public static final Element.CategoryData PLAIN_TEXT_FILES = new Element.CategoryData("Plain Text Files", "txt", new ImageIcon(PlainTextFile.class.getResource("/resources/icons/fugue/scripts-text.png")), new PlainTextFile());
+    public static final Element.CategoryData PLAIN_TEXT_FILES = new Element.CategoryData("Plain Text Files", "txt", new ImageIcon(PlainTextFile.class.getResource("/resources/icons/fugue/documents-text.png")), new PlainTextFile());
     
     private String text;
 

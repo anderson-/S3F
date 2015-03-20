@@ -100,8 +100,10 @@ import s3f.core.plugin.EntityManager;
 import s3f.core.plugin.Extensible;
 import s3f.core.plugin.PluginManager;
 import s3f.core.project.Element;
+import s3f.core.project.ExtensibleElement;
 import s3f.core.project.Project;
 import s3f.core.project.ProjectTreeTab;
+import s3f.core.project.Resource;
 import s3f.core.project.editormanager.TextFile;
 import s3f.core.script.MyJSConsole;
 import s3f.core.script.ScriptEnvironment;
@@ -255,8 +257,34 @@ public class MainUI implements Extensible {
         newProject = new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                for (Element el : new ArrayList<>(project.getElements())) {
-                    projectTreeTab.deleteElement(el);
+                Project p = NewProjectDialog.createNewProjectDialog();
+                if (p != null) {
+                    for (Element el : new ArrayList<>(project.getElements())) {
+                        projectTreeTab.deleteElement(el);
+                    }
+                    for (Element el : new ArrayList<>(p.getElements())) {
+                        Element newEl = (Element) el.createInstance();
+                        newEl.setName(el.getName());
+                        if (el instanceof TextFile && newEl instanceof TextFile) {
+                            ((TextFile) newEl).setText(((TextFile) el).getText());
+                        }
+                        project.addElement(newEl);
+                        projectTreeTab.createElement(newEl);
+                    }
+                    for (Element el : new ArrayList<>(p.getElements())) {
+                        if (el instanceof ExtensibleElement) {
+                            ExtensibleElement extensibleElement = (ExtensibleElement) el;
+                            for (Resource r : extensibleElement.getResources()) {
+                                Element primaryElm = project.getElement(r.getPrimary().getCategoryData().getName() + "/" + r.getPrimary().getName());
+                                Element secondary = project.getElement(r.getSecondary().getCategoryData().getName() + "/" + r.getSecondary().getName());
+                                if (primaryElm instanceof ExtensibleElement) {
+                                    ExtensibleElement primary = (ExtensibleElement) primaryElm;
+                                    primary.addResource(new Resource(primary, secondary));
+                                }
+                            }
+                        }
+                    }
+                    projectTreeTab.update();
                 }
             }
         };
@@ -328,10 +356,12 @@ public class MainUI implements Extensible {
                 int returnVal = fileChooser.showOpenDialog(window);
 
                 if (returnVal == JFileChooser.APPROVE_OPTION) {
-                    returnVal = JOptionPane.showConfirmDialog(window, "The current project will be closed, would you like to proceed?", "Open", JOptionPane.YES_NO_OPTION);
+                    if (!project.getElements().isEmpty()) {
+                        returnVal = JOptionPane.showConfirmDialog(window, "The current project will be closed, would you like to proceed?", "Open", JOptionPane.YES_NO_OPTION);
 
-                    if (returnVal != JOptionPane.YES_OPTION) {
-                        return;
+                        if (returnVal != JOptionPane.YES_OPTION) {
+                            return;
+                        }
                     }
                     File file = fileChooser.getSelectedFile();
 
@@ -870,7 +900,8 @@ public class MainUI implements Extensible {
             if (GUIBuilder.getLookAndFeel() != null) {
                 UIManager.setLookAndFeel(GUIBuilder.getLookAndFeel());
             } else {
-                UIManager.setLookAndFeel(createLookAndFeel(RandomColor.generate(.4f, .8f)));
+                Color color = Color.getHSBColor(.2f + (float) Math.random() * .8f, .4f, .8f);
+                UIManager.setLookAndFeel(createLookAndFeel(color));
             }
 
 //            InfoNodeLookAndFeelTheme theme
@@ -1051,13 +1082,13 @@ public class MainUI implements Extensible {
                 tmpWidth += c.getPreferredSize().width;
             }
 
-            {//controles do simulador
-                toolBarPanel.add(builder.separator());
-                for (Component c : SimulationUtils.createControlPanel((Simulator) em.getProperty("s3f.core.interpreter.tmp", "interpreter"))) {
-                    toolBarPanel.add(c);
-                    tmpWidth += c.getPreferredSize().width;
-                }
-            }
+//            {//controles do simulador
+//                toolBarPanel.add(builder.separator());
+//                for (Component c : SimulationUtils.createControlPanel((Simulator) em.getProperty("s3f.core.interpreter.tmp", "interpreter"))) {
+//                    toolBarPanel.add(c);
+//                    tmpWidth += c.getPreferredSize().width;
+//                }
+//            }
 
             final JPanel p = new JPanel();
 //            p.setBackground(Color.red);
