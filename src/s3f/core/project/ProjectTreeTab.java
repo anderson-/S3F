@@ -108,21 +108,35 @@ public class ProjectTreeTab implements Tab, Extensible {
         });
     }
 
-    public void createElement(Element element) {
+    public boolean createElement(Element element) {
         Collection<Class<? extends Editor>> editors = element.getData().getProperty(EditableProperty.EDITORS);
         if (editors != null && !editors.isEmpty()) {
             try {
-                Editor editor = (Editor) editors.iterator().next().newInstance();
-                createElement(element, editor);
+                int i = 0;
+                for (Class<? extends Editor> c : editors) {
+                    Editor editor = c.newInstance();
+                    if (createElement(element, editor)) {
+                        if (i > 0) {
+                            if (i == 1) {
+                                JOptionPane.showMessageDialog(null, "Your file could not be opened by the default editor, check the syntax or file encoding.", "Error", JOptionPane.ERROR_MESSAGE);
+                            } else {
+                                JOptionPane.showMessageDialog(null, "Your file could not be opened by the last " + i + " editors, check the syntax or file encoding.", "Error", JOptionPane.ERROR_MESSAGE);
+                            }
+                        }
+                        return true;
+                    }
+                    i++;
+                }
             } catch (InstantiationException | IllegalAccessException ex) {
                 System.out.println("invalid class" + ex.getMessage());
             }
         } else {
             System.out.println("não deu certo :/");
         }
+        return false;
     }
 
-    public void createElement(Element element, Editor editor) {
+    public boolean createElement(Element element, Editor editor) {
         Editor openEditor = openEditors.get(element);
         if (openEditor != null) {
             Component component = openEditor.getData().getProperty(TabProperty.COMPONENT);
@@ -142,19 +156,25 @@ public class ProjectTreeTab implements Tab, Extensible {
             } else {
                 View v = MainUI.componentSearch(component, View.class, false);
                 openEditors.remove(element);
-                createElement(element, editor);
+                boolean b = createElement(element, editor);
                 v.close();
-                return;
+                return b;
             }
         } else {
-            editor.setContent(element);
-            editor.update();
-            element.setCurrentEditor(editor);
-            openEditors.put(element, editor);
-            MainUI.getInstance().addView(1, editor);
+            try {
+                editor.setContent(element);
+                editor.update();
+                element.setCurrentEditor(editor);
+                openEditors.put(element, editor);
+                MainUI.getInstance().addView(1, editor);
+            } catch (Exception e) {
+                e.printStackTrace();
+                return false;
+            }
         }
 
         update();
+        return true; //TODO: isso esta certo?
     }
 
     public void deleteElement(Element element) {

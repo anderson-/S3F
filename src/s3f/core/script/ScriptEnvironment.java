@@ -11,6 +11,7 @@ import java.util.Map;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Function;
 import org.mozilla.javascript.Scriptable;
+import s3f.core.plugin.Data;
 import s3f.core.plugin.PluginManager;
 
 /**
@@ -35,16 +36,29 @@ public class ScriptEnvironment {
         return func;
     }
 
-    public static void tree(Context cx, Scriptable thisObj, Object[] args, Function funObj) {
-        PluginManager.getInstance().printTree(System.out);
+    public static Object tree(Context cx, Scriptable thisObj, Object[] args, Function funObj) {
+        if (args.length == 0) {
+            PluginManager.getInstance().printTree(System.out);
+        } else if (args.length > 0) {
+            Data data = PluginManager.getInstance().createFactoryManager(null).getData((String) args[0]);
+            if (data != null) {//tree("s3f.core.project.tmp")
+                if (args.length > 1) {
+                    Object o = data.getProperty((String) args[1]);
+                    return o;
+                } else {
+                    return data;
+                }
+            }
+        }
+        return null;
     }
-    
+
     public static void printHistory(Context cx, Scriptable thisObj, Object[] args, Function funObj) {
-        for (String s : ScriptManager.getExecutionHistory()){
+        for (String s : ScriptManager.getExecutionHistory()) {
             System.out.println(s);
         }
     }
-    
+
     public static void printExample(Context cx, Scriptable thisObj, Object[] args, Function funObj) {
         PrintStream out = System.out;
         for (int i = 0; i < args.length; i++) {
