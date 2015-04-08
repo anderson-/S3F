@@ -70,13 +70,18 @@ public class Script extends SimpleElement implements TextFile {
 
                     @Override
                     public void actionPerformed(ActionEvent ae) {
-                        ScriptManager.kill();
+                        new Thread("Process Killer") {
+                            @Override
+                            public void run() {
+                                ScriptManager.kill();
+                            }
+                        }.start();
                     }
                 });
             }
 
         };
-        
+
         //force GUI rebuild
         PluginManager pm = PluginManager.getInstance();
         pm.registerFactory(gui);

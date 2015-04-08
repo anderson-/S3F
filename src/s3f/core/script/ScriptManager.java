@@ -119,12 +119,23 @@ public class ScriptManager {
         return (Invocable) engine;
     }
 
+    /**
+     * Try to kill the current script.
+     */
     public static void kill() {
         if (running != null) {
             running.stop();
+            for (int i = 1; i <= 1000 && running != null; i = i * 10) {
+                try {
+                    Thread.sleep(i);
+                } catch (InterruptedException ex) {
+                }
+                System.err.println("Warning: Script not killed after waiting " + i + "ms");
+            }
             if (running != null) {
                 throw new RuntimeException("Failed to kill process!");
             }
+            System.err.println("Script Killed");
         }
     }
 
