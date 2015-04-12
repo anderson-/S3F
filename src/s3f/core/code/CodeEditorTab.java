@@ -317,7 +317,7 @@ public class CodeEditorTab extends DockingWindowAdapter implements Editor {
 
     @Override
     public Element getContent() {
-        return null;
+        return textFile;
     }
 
     @Override
